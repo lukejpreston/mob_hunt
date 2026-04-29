@@ -810,6 +810,8 @@
     <canvas class="victory-mob" id="victory-mob-canvas" width="96" height="96"></canvas>
     <div class="victory-points" id="victory-points">+0</div>
     <div class="victory-label">points earned</div>
+    <div id="wither-summon-hint" style="display:none;color:#aaa;font-size:1.1rem;margin-bottom:0.5rem;">The Wither can be summoned!</div>
+    <button id="wither-summon-btn" class="btn" style="display:none;margin-bottom:1rem;" onclick="unlockMob('wither');navigateTo('wither/hunt')">Summon the Wither!</button>
     <button class="btn-hunt" onclick="openScanner()">
       <svg class="sword-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="28" width="4" height="4" fill="#8B4513"/>
@@ -3962,6 +3964,13 @@ function mobDied() {
     drawMob(ctx, currentMob, 96, 0);
     showScreen('victory-screen');
     updateSkullDisplay();
+
+    /* Show wither summon hint + button if player has 3+ skulls and wither not yet slain this cycle */
+    const showWitherHint = getWitherSkulls() >= 3 && currentMob !== 'wither';
+    const witherHint = document.getElementById('wither-summon-hint');
+    const witherBtn = document.getElementById('wither-summon-btn');
+    if (witherHint) witherHint.style.display = showWitherHint ? '' : 'none';
+    if (witherBtn) witherBtn.style.display = showWitherHint ? '' : 'none';
 
     /* Check if dragon was just unlocked */
     if (!wasUnlocked && nowUnlocked && currentMob !== 'enderdragon') {
