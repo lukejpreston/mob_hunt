@@ -594,7 +594,7 @@
       </svg>
       Hunt
     </button>
-    <button class="btn btn-small" onclick="showScreen('select-screen')">Mob List</button>
+    <button class="btn btn-small" onclick="navigateTo('list')">Mob List</button>
     <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
   </div>
 
@@ -629,7 +629,7 @@
     <h2>Choose Your Prey</h2>
     <div class="mob-grid" id="mob-grid"></div>
     <br>
-    <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+    <button class="btn btn-small" onclick="navigateTo('')">Back</button>
   </div>
 
   <!-- ===== QR SCREEN ===== -->
@@ -639,7 +639,7 @@
     <p class="qr-info">Scan this QR code to start the hunt! Or tap the button below to fight now.</p>
     <button class="btn" id="qr-fight-btn">Fight Now!</button>
     <br>
-    <button class="btn btn-small" onclick="showScreen('select-screen')">Back</button>
+    <button class="btn btn-small" onclick="navigateTo('list')">Back</button>
   </div>
 
   <!-- ===== GAME ===== -->
@@ -662,8 +662,8 @@
     <canvas class="victory-mob" id="victory-mob-canvas" width="96" height="96"></canvas>
     <div class="victory-points" id="victory-points">+0</div>
     <div class="victory-label">points earned</div>
-    <button class="btn" onclick="showScreen('select-screen')">Hunt Again</button>
-    <button class="btn" onclick="showScreen('home-screen')">Home</button>
+    <button class="btn" onclick="navigateTo('list')">Hunt Again</button>
+    <button class="btn" onclick="navigateTo('')">Home</button>
   </div>
 
   <!-- ===== PRINT CARDS ===== -->
@@ -671,7 +671,7 @@
     <h2>Printable Mob Cards</h2>
     <div class="print-actions">
       <button class="btn" onclick="window.print()">Print Cards</button>
-      <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+      <button class="btn btn-small" onclick="navigateTo('')">Back</button>
     </div>
     <div class="print-cards-grid" id="print-cards-grid"></div>
   </div>
@@ -681,7 +681,7 @@
     <h2>Scan a Mob QR Code</h2>
     <p class="scanner-hint">Point your camera at a Mob Hunt QR code</p>
     <div id="scanner-reader"></div>
-    <button class="btn btn-small" onclick="closeScanner()">Cancel</button>
+    <button class="btn btn-small" onclick="navigateTo('')">Cancel</button>
   </div>
 
 <script>
@@ -1525,7 +1525,7 @@ function showDragonNotification() {
   btn.textContent = 'Accept the Challenge';
   btn.onclick = () => {
     overlay.remove();
-    showScreen('select-screen');
+    navigateTo('list');
   };
   overlay.appendChild(btn);
 
@@ -1543,8 +1543,19 @@ function showDragonNotification() {
 }
 
 /* ================================================================
-   SCREEN MANAGEMENT
+   HASH-BASED ROUTING
+   Routes:
+     (empty / no hash)  -> home screen
+     #list              -> mob list
+     #mob_name          -> QR code page for that mob
+     #mob_name/hunt     -> straight to fighting the mob
+     #scan              -> QR scanner
+     #print             -> printable cards
    ================================================================ */
+function navigateTo(hash) {
+  window.location.hash = hash;
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1561,6 +1572,65 @@ function showScreen(id) {
     renderMobGrid();
   }
 }
+
+function handleRoute() {
+  const hash = window.location.hash.replace(/^#/, '');
+
+  /* Stop scanner if navigating away from it */
+  stopScanner();
+
+  if (!hash || hash === '') {
+    /* Home screen */
+    showScreen('home-screen');
+    return;
+  }
+
+  if (hash === 'list') {
+    showScreen('select-screen');
+    return;
+  }
+
+  if (hash === 'scan') {
+    showScreen('scanner-screen');
+    startScanner();
+    return;
+  }
+
+  if (hash === 'print') {
+    renderPrintCards();
+    showScreen('print-screen');
+    return;
+  }
+
+  /* Check for mob_name/hunt or just mob_name */
+  const parts = hash.split('/');
+  const mobKey = parts[0];
+  const action = parts[1];
+
+  if (mobKey && MOBS[mobKey]) {
+    if (action === 'hunt') {
+      /* Go straight to fighting */
+      /* Block dragon if points threshold not met */
+      if (MOBS[mobKey].locked && !isDragonUnlocked()) {
+        showScreen('home-screen');
+        return;
+      }
+      /* Scanning a QR / visiting hunt URL unlocks that mob */
+      unlockMob(mobKey);
+      startGame(mobKey);
+    } else {
+      /* Show QR code page for this mob */
+      showScreen('qr-screen');
+      generateQR(mobKey);
+    }
+    return;
+  }
+
+  /* Unknown hash - go home */
+  showScreen('home-screen');
+}
+
+window.addEventListener('hashchange', handleRoute);
 
 /* ================================================================
    PIXEL ART MOB RENDERER
@@ -1912,8 +1982,8 @@ function renderMobGrid() {
    QR CODE GENERATOR (using qrcode-generator library)
    ================================================================ */
 function generateQR(mobKey) {
-  const baseUrl = window.location.href.split('?')[0];
-  const url = `${baseUrl}?mob=${mobKey}`;
+  const baseUrl = window.location.href.split('#')[0].split('?')[0];
+  const url = `${baseUrl}#${mobKey}/hunt`;
 
   document.getElementById('qr-title').textContent = `${MOBS[mobKey].name} QR Code`;
 
@@ -1949,7 +2019,7 @@ function generateQR(mobKey) {
   }
 
   /* Set up fight button */
-  document.getElementById('qr-fight-btn').onclick = () => startGame(mobKey);
+  document.getElementById('qr-fight-btn').onclick = () => navigateTo(`${mobKey}/hunt`);
 
   /* Update the QR info */
   document.querySelector('.qr-info').innerHTML =
@@ -1957,8 +2027,7 @@ function generateQR(mobKey) {
 }
 
 function selectMob(mobKey) {
-  showScreen('qr-screen');
-  generateQR(mobKey);
+  navigateTo(mobKey);
 }
 
 /* ================================================================
@@ -2174,13 +2243,12 @@ document.getElementById('mob-area').addEventListener('touchstart', (e) => {
 let html5QrScanner = null;
 
 function openScanner() {
-  showScreen('scanner-screen');
-  startScanner();
+  navigateTo('scan');
 }
 
 function closeScanner() {
   stopScanner();
-  showScreen('home-screen');
+  navigateTo('');
 }
 
 function startScanner() {
@@ -2207,11 +2275,22 @@ function stopScanner() {
 }
 
 function onScanSuccess(decodedText) {
-  /* Extract mob key from scanned URL (e.g. ...?mob=zombie) */
+  /* Extract mob key from scanned URL (e.g. ...#zombie/hunt) */
   let mobKey = null;
   try {
     const url = new URL(decodedText);
-    mobKey = url.searchParams.get('mob');
+    /* Try hash-based format first: #mob_name/hunt or #mob_name */
+    const hash = url.hash.replace(/^#/, '');
+    if (hash) {
+      const parts = hash.split('/');
+      if (parts[0] && MOBS[parts[0]]) {
+        mobKey = parts[0];
+      }
+    }
+    /* Fallback: old ?mob= format */
+    if (!mobKey) {
+      mobKey = url.searchParams.get('mob');
+    }
   } catch {
     /* Not a valid URL - ignore */
     return;
@@ -2222,25 +2301,19 @@ function onScanSuccess(decodedText) {
   /* Block dragon if points threshold not met */
   if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
 
-  /* Stop the scanner and unlock + fight */
+  /* Stop the scanner and navigate to hunt */
   stopScanner();
-  unlockMob(mobKey);
-  startGame(mobKey);
+  navigateTo(`${mobKey}/hunt`);
 }
 
-/* Stop scanner when navigating away */
-const _origShowScreen = showScreen;
-showScreen = function(id) {
-  if (id !== 'scanner-screen') stopScanner();
-  _origShowScreen(id);
-};
+/* Scanner is stopped by the router (handleRoute) when navigating away */
 
 /* ================================================================
    PRINTABLE CARDS
    ================================================================ */
 function generateQRCanvas(mobKey, size) {
-  const baseUrl = window.location.href.split('?')[0];
-  const url = `${baseUrl}?mob=${mobKey}`;
+  const baseUrl = window.location.href.split('#')[0].split('?')[0];
+  const url = `${baseUrl}#${mobKey}/hunt`;
 
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -2326,26 +2399,24 @@ function resetData() {
 }
 
 /* ================================================================
-   URL PARAM HANDLING (QR code entry point)
+   LEGACY URL PARAM REDIRECT
+   Redirect old ?mob=X and ?print URLs to hash equivalents.
    ================================================================ */
-function checkUrlParams() {
+function redirectLegacyParams() {
   const params = new URLSearchParams(window.location.search);
 
-  /* ?print — show the printable cards page */
   if (params.has('print')) {
-    renderPrintCards();
-    showScreen('print-screen');
-    return;
+    window.location.replace(window.location.pathname + '#print');
+    return true;
   }
 
   const mobKey = params.get('mob');
   if (mobKey && MOBS[mobKey]) {
-    /* Block dragon if points threshold not met */
-    if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
-    /* Scanning a QR unlocks that mob permanently */
-    unlockMob(mobKey);
-    startGame(mobKey);
+    window.location.replace(window.location.pathname + '#' + mobKey + '/hunt');
+    return true;
   }
+
+  return false;
 }
 
 /* ================================================================
@@ -2356,7 +2427,12 @@ function init() {
   document.getElementById('total-score').textContent = data.totalScore;
   document.getElementById('select-total-score').textContent = data.totalScore;
   renderMobGrid();
-  checkUrlParams();
+
+  /* Redirect legacy ?mob= and ?print URLs to hash routes */
+  if (redirectLegacyParams()) return;
+
+  /* Route based on current hash */
+  handleRoute();
 
   /* Show dragon notification on load if already unlocked and never fought */
   if (isDragonUnlocked() && !data.kills['enderdragon']) {
