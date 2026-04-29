@@ -342,6 +342,72 @@
       font-size: 1.2rem;
     }
     .lb-total .lb-mob { color: #fff; }
+
+    /* ===== LOCKED MOB CARD ===== */
+    .mob-card.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #555;
+      position: relative;
+    }
+    .mob-card.locked:hover, .mob-card.locked:active {
+      border-color: #555;
+      transform: none;
+    }
+    .mob-card .lock-icon {
+      font-size: 1.5rem;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+    .mob-card .lock-info {
+      font-size: 0.7rem;
+      color: #e94560;
+      margin-top: 0.25rem;
+    }
+
+    /* ===== DRAGON UNLOCKED NOTIFICATION ===== */
+    .dragon-notification {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      animation: dragonFadeIn 0.5s ease;
+    }
+    .dragon-notification h2 {
+      font-size: 2rem;
+      color: #e040fb;
+      text-shadow: 0 0 30px #e040fb, 0 0 60px #7b1fa2;
+      margin-bottom: 1rem;
+      animation: dragonPulse 1.5s ease-in-out infinite;
+      text-align: center;
+      padding: 0 1rem;
+    }
+    .dragon-notification canvas {
+      width: 128px;
+      height: 128px;
+      image-rendering: pixelated;
+      margin-bottom: 1.5rem;
+    }
+    .dragon-notification .btn {
+      border-color: #e040fb;
+      color: #e040fb;
+    }
+    .dragon-notification .btn:hover, .dragon-notification .btn:active {
+      background: #e040fb;
+      color: #fff;
+    }
+    @keyframes dragonFadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes dragonPulse {
+      0%, 100% { transform: scale(1); text-shadow: 0 0 30px #e040fb, 0 0 60px #7b1fa2; }
+      50% { transform: scale(1.05); text-shadow: 0 0 50px #e040fb, 0 0 80px #7b1fa2; }
+    }
   </style>
 </head>
 <body>
@@ -464,6 +530,18 @@ const MOBS = {
     darkColor: '#4a3668',
     eyeColor: '#000',
     description: 'Potion-brewing menace',
+  },
+  enderdragon: {
+    name: 'Ender Dragon',
+    hearts: 100,
+    points: 500,
+    color: '#1a1a1a',
+    darkColor: '#0d0d0d',
+    eyeColor: '#e040fb',
+    accentColor: '#7b1fa2',
+    wingColor: '#2c2c2c',
+    description: 'The final boss',
+    locked: true,
   },
 };
 
@@ -808,13 +886,86 @@ function playWitchHurt() {
   /* (applied via the frequency modulation above) */
 }
 
+/* --- ENDER DRAGON HURT: massive roar with distortion --- */
+function playEnderdragonHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Deep roar - distorted low oscillator */
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  const baseFreq = 60 + Math.random() * 20;
+  osc.frequency.setValueAtTime(baseFreq, t);
+  osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, t + 0.1);
+  osc.frequency.linearRampToValueAtTime(baseFreq * 0.5, t + 0.4);
+
+  const distortion = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const x = (i / 128) - 1;
+    curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+  }
+  distortion.curve = curve;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(600, t);
+  filter.frequency.linearRampToValueAtTime(200, t + 0.4);
+  filter.Q.value = 2;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.35, t);
+  gain.gain.linearRampToValueAtTime(0.35, t + 0.15);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+  osc.connect(distortion);
+  distortion.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.55);
+
+  /* High screech layer */
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(800 + Math.random() * 200, t);
+  osc2.frequency.exponentialRampToValueAtTime(200, t + 0.3);
+
+  const g2 = ctx.createGain();
+  g2.gain.setValueAtTime(0.1, t);
+  g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+  osc2.connect(g2);
+  g2.connect(ctx.destination);
+  osc2.start(t);
+  osc2.stop(t + 0.4);
+
+  /* Noise burst for impact */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.3);
+
+  const nf = ctx.createBiquadFilter();
+  nf.type = 'lowpass';
+  nf.frequency.value = 1000;
+
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.25, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.35);
+}
+
 /* --- MOB AMBIENT SOUNDS (looping background) --- */
 let ambientInterval = null;
 
 function startAmbientSound(mobKey) {
   stopAmbientSound();
   playAmbientOnce(mobKey);
-  const delay = mobKey === 'enderman' ? 2000 : 3000 + Math.random() * 2000;
+  const delay = mobKey === 'enderdragon' ? 1500 : mobKey === 'enderman' ? 2000 : 3000 + Math.random() * 2000;
   ambientInterval = setInterval(() => playAmbientOnce(mobKey), delay);
 }
 
@@ -975,6 +1126,55 @@ function playAmbientOnce(mobKey) {
       }
       break;
     }
+    case 'enderdragon': {
+      /* Deep rumbling growl / wing beats */
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      const freq = 40 + Math.random() * 20;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.linearRampToValueAtTime(freq * 1.2, t + 0.3);
+      osc.frequency.linearRampToValueAtTime(freq * 0.6, t + 1.0);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 200;
+      filter.Q.value = 2;
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.1, t + 0.15);
+      g.gain.linearRampToValueAtTime(0.08, t + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.1);
+
+      /* Wing beat whoosh */
+      const noise = ctx.createBufferSource();
+      noise.buffer = createNoiseBuffer(ctx, 0.5);
+
+      const nf = ctx.createBiquadFilter();
+      nf.type = 'bandpass';
+      nf.frequency.setValueAtTime(300, t + 0.2);
+      nf.frequency.linearRampToValueAtTime(600, t + 0.4);
+      nf.frequency.linearRampToValueAtTime(200, t + 0.6);
+      nf.Q.value = 1;
+
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.001, t + 0.2);
+      ng.gain.linearRampToValueAtTime(0.06, t + 0.35);
+      ng.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+
+      noise.connect(nf);
+      nf.connect(ng);
+      ng.connect(ctx.destination);
+      noise.start(t + 0.2);
+      noise.stop(t + 0.7);
+      break;
+    }
   }
 }
 
@@ -1029,6 +1229,7 @@ const MOB_HURT_SOUNDS = {
   spider: playSpiderHurt,
   enderman: playEndermanHurt,
   witch: playWitchHurt,
+  enderdragon: playEnderdragonHurt,
 };
 
 /* ================================================================
@@ -1058,6 +1259,56 @@ function savePlayerData(data) {
 }
 
 /* ================================================================
+   ENDER DRAGON UNLOCK LOGIC
+   ================================================================ */
+/* Threshold = sum of points from each non-dragon mob (one kill of each) */
+const DRAGON_UNLOCK_THRESHOLD = Object.entries(MOBS)
+  .filter(([key]) => key !== 'enderdragon')
+  .reduce((sum, [, mob]) => sum + mob.points, 0);
+
+function isDragonUnlocked() {
+  const data = getPlayerData();
+  return data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
+}
+
+function showDragonNotification() {
+  /* Don't show if already dismissed this session */
+  if (window._dragonNotifShown) return;
+  window._dragonNotifShown = true;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'dragon-notification';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+
+  overlay.innerHTML = '<h2>The Enderdragon is here!</h2>';
+  overlay.appendChild(canvas);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = 'Accept the Challenge';
+  btn.onclick = () => {
+    overlay.remove();
+    showScreen('select-screen');
+  };
+  overlay.appendChild(btn);
+
+  document.body.appendChild(overlay);
+
+  /* Draw the dragon on the notification canvas */
+  const ctx = canvas.getContext('2d');
+  let frame = 0;
+  function animDragonNotif() {
+    frame++;
+    drawMob(ctx, 'enderdragon', 128, frame);
+    if (overlay.parentElement) requestAnimationFrame(animDragonNotif);
+  }
+  animDragonNotif();
+}
+
+/* ================================================================
    SCREEN MANAGEMENT
    ================================================================ */
 function showScreen(id) {
@@ -1069,6 +1320,9 @@ function showScreen(id) {
   if (id === 'home-screen') {
     const data = getPlayerData();
     document.getElementById('total-score').textContent = data.totalScore;
+  }
+  if (id === 'select-screen') {
+    renderMobGrid();
   }
 }
 
@@ -1103,6 +1357,9 @@ function drawMob(ctx, mobKey, size, frame) {
       break;
     case 'witch':
       drawWitch(ctx, s, mob, frame);
+      break;
+    case 'enderdragon':
+      drawEnderdragon(ctx, s, mob, frame);
       break;
   }
 
@@ -1243,6 +1500,74 @@ function drawEnderman(ctx, s, mob, frame) {
   ctx.globalAlpha = 1;
 }
 
+function drawEnderdragon(ctx, s, mob, frame) {
+  /* Wings - large and sweeping */
+  const wingFlap = Math.sin(frame * 0.12) * 2 * s;
+  ctx.fillStyle = mob.wingColor || '#2c2c2c';
+  /* Left wing */
+  ctx.fillRect(0, 3*s + wingFlap, 4*s, 5*s);
+  ctx.fillRect(1*s, 2*s + wingFlap, 3*s, 1*s);
+  /* Right wing */
+  ctx.fillRect(12*s, 3*s - wingFlap, 4*s, 5*s);
+  ctx.fillRect(12*s, 2*s - wingFlap, 3*s, 1*s);
+
+  /* Body - long dragon body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 4*s, 6*s, 5*s);
+
+  /* Spine ridge */
+  ctx.fillStyle = mob.accentColor || '#7b1fa2';
+  ctx.fillRect(7*s, 3*s, 2*s, 1*s);
+  ctx.fillRect(6*s, 8*s, 4*s, 1*s);
+
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 0, 6*s, 4*s);
+  /* Horns */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 0, 1*s, 1*s);
+  ctx.fillRect(10*s, 0, 1*s, 1*s);
+  /* Snout */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 3*s, 4*s, 1*s);
+  /* Eyes - glowing purple */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 1*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 1*s, 2*s, 2*s);
+  /* Eye glow pulse */
+  ctx.globalAlpha = 0.3 + Math.sin(frame * 0.15) * 0.2;
+  ctx.fillRect(5*s, 1*s, 3*s, 2*s);
+  ctx.fillRect(8*s, 1*s, 3*s, 2*s);
+  ctx.globalAlpha = 1;
+
+  /* Legs */
+  ctx.fillStyle = mob.color;
+  const legSwing = Math.sin(frame * 0.1) * s;
+  ctx.fillRect(5*s, 9*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(9*s, 9*s - legSwing, 2*s, 3*s);
+  /* Claws */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 12*s + legSwing, 2*s, 1*s);
+  ctx.fillRect(9*s, 12*s - legSwing, 2*s, 1*s);
+
+  /* Tail */
+  ctx.fillStyle = mob.color;
+  const tailSway = Math.sin(frame * 0.08) * 1.5 * s;
+  ctx.fillRect(6*s, 13*s, 4*s, 1*s);
+  ctx.fillRect(7*s + tailSway, 14*s, 3*s, 1*s);
+  ctx.fillRect(8*s + tailSway * 1.5, 15*s, 2*s, 1*s);
+
+  /* Ender particles */
+  ctx.fillStyle = mob.eyeColor;
+  for (let i = 0; i < 3; i++) {
+    const px = 1 + Math.sin(frame * 0.2 + i * 2) * 6;
+    const py = 1 + Math.cos(frame * 0.17 + i * 2.5) * 7;
+    ctx.globalAlpha = 0.3 + Math.sin(frame * 0.3 + i) * 0.3;
+    ctx.fillRect(px * s, py * s, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawWitch(ctx, s, mob, frame) {
   /* Hat */
   ctx.fillStyle = '#2c1f17';
@@ -1280,21 +1605,42 @@ function drawWitch(ctx, s, mob, frame) {
 function renderMobGrid() {
   const grid = document.getElementById('mob-grid');
   grid.innerHTML = '';
+  const unlocked = isDragonUnlocked();
+
   for (const [key, mob] of Object.entries(MOBS)) {
+    const isLocked = mob.locked && !unlocked;
     const card = document.createElement('div');
-    card.className = 'mob-card';
-    card.innerHTML = `
-      <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
-      <div class="mob-name">${mob.name}</div>
-      <div class="mob-info">${mob.hearts} HP / ${mob.points} pts</div>
-      <div class="mob-info">${mob.description}</div>
-    `;
-    card.addEventListener('click', () => selectMob(key));
+    card.className = 'mob-card' + (isLocked ? ' locked' : '');
+
+    if (isLocked) {
+      card.innerHTML = `
+        <div class="lock-icon">&#128274;</div>
+        <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
+        <div class="mob-name">???</div>
+        <div class="mob-info">Locked</div>
+        <div class="lock-info">Need ${DRAGON_UNLOCK_THRESHOLD} pts to unlock</div>
+      `;
+      /* Draw a dark silhouette for locked preview */
+      const canvas = card.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      drawMob(ctx, key, 64, 0);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, 64, 64);
+    } else {
+      card.innerHTML = `
+        <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
+        <div class="mob-name">${mob.name}</div>
+        <div class="mob-info">${mob.hearts} HP / ${mob.points} pts</div>
+        <div class="mob-info">${mob.description}</div>
+      `;
+      card.addEventListener('click', () => selectMob(key));
+      /* Draw preview */
+      const canvas = card.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      drawMob(ctx, key, 64, 0);
+    }
+
     grid.appendChild(card);
-    /* Draw preview */
-    const canvas = card.querySelector('canvas');
-    const ctx = canvas.getContext('2d');
-    drawMob(ctx, key, 64, 0);
   }
 }
 
@@ -1529,10 +1875,13 @@ function mobDied() {
     /* Award points */
     const mob = MOBS[currentMob];
     const data = getPlayerData();
+    const wasUnlocked = data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
     data.totalScore += mob.points;
     if (!data.kills[currentMob]) data.kills[currentMob] = 0;
     data.kills[currentMob]++;
     savePlayerData(data);
+
+    const nowUnlocked = data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
 
     /* Show victory */
     document.getElementById('victory-points').textContent = `+${mob.points}`;
@@ -1540,6 +1889,11 @@ function mobDied() {
     const ctx = victoryCanvas.getContext('2d');
     drawMob(ctx, currentMob, 96, 0);
     showScreen('victory-screen');
+
+    /* Check if dragon was just unlocked */
+    if (!wasUnlocked && nowUnlocked && currentMob !== 'enderdragon') {
+      setTimeout(() => showDragonNotification(), 1500);
+    }
   }, 900);
 }
 
@@ -1605,6 +1959,8 @@ function checkUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const mobKey = params.get('mob');
   if (mobKey && MOBS[mobKey]) {
+    /* Block locked mobs from URL access */
+    if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
     startGame(mobKey);
   }
 }
@@ -1617,6 +1973,11 @@ function init() {
   document.getElementById('total-score').textContent = data.totalScore;
   renderMobGrid();
   checkUrlParams();
+
+  /* Show dragon notification on load if already unlocked and never fought */
+  if (isDragonUnlocked() && !data.kills['enderdragon']) {
+    showDragonNotification();
+  }
 }
 
 init();
