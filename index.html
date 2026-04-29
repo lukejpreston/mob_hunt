@@ -600,6 +600,7 @@
 
   <!-- ===== MOB SELECT ===== -->
   <div id="select-screen" class="screen">
+    <div class="score-display">Total Score: <span id="select-total-score">0</span></div>
     <button class="btn-hunt" onclick="openScanner()" style="margin-bottom: 1rem;">
       <svg class="sword-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="28" width="4" height="4" fill="#8B4513"/>
@@ -1555,6 +1556,8 @@ function showScreen(id) {
     document.getElementById('total-score').textContent = data.totalScore;
   }
   if (id === 'select-screen') {
+    const selData = getPlayerData();
+    document.getElementById('select-total-score').textContent = selData.totalScore;
     renderMobGrid();
   }
 }
@@ -2351,6 +2354,7 @@ function checkUrlParams() {
 function init() {
   const data = getPlayerData();
   document.getElementById('total-score').textContent = data.totalScore;
+  document.getElementById('select-total-score').textContent = data.totalScore;
   renderMobGrid();
   checkUrlParams();
 
