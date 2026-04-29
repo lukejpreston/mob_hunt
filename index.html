@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Mob Hunt</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     /* ===== RESET & BASE ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -466,6 +467,36 @@
       margin: 0 auto;
     }
 
+    /* ===== QR SCANNER ===== */
+    #scanner-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      padding: 1.5rem;
+      gap: 1rem;
+    }
+    #scanner-screen h2 {
+      font-size: 1.6rem;
+      color: #e94560;
+    }
+    .scanner-hint {
+      font-size: 0.9rem;
+      color: #888;
+      text-align: center;
+    }
+    #scanner-reader {
+      width: 100%;
+      max-width: 350px;
+      border: 2px solid #e94560;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #scanner-reader video {
+      width: 100% !important;
+      height: auto !important;
+    }
+    /* hide the default html5-qrcode header and file scan */
+    #scanner-reader img[alt="Info"] { display: none !important; }
+    #scanner-reader > div:last-child { display: none !important; }
+
     /* ===== PRINT MEDIA ===== */
     @media print {
       html, body {
@@ -506,7 +537,8 @@
     <h1>MOB HUNT</h1>
     <p class="subtitle">Scan. Click. Slay.</p>
     <div class="score-display">Total Score: <span id="total-score">0</span></div>
-    <button class="btn" onclick="showScreen('select-screen')">Hunt a Mob</button>
+    <button class="btn" onclick="openScanner()">Hunt</button>
+    <button class="btn btn-small" onclick="showScreen('select-screen')">Mob List</button>
     <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
   </div>
 
@@ -560,6 +592,14 @@
       <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
     </div>
     <div class="print-cards-grid" id="print-cards-grid"></div>
+  </div>
+
+  <!-- ===== QR SCANNER ===== -->
+  <div id="scanner-screen" class="screen">
+    <h2>Scan a Mob QR Code</h2>
+    <p class="scanner-hint">Point your camera at a Mob Hunt QR code</p>
+    <div id="scanner-reader"></div>
+    <button class="btn btn-small" onclick="closeScanner()">Cancel</button>
   </div>
 
 <script>
@@ -2043,6 +2083,73 @@ document.getElementById('mob-area').addEventListener('touchstart', (e) => {
   e.preventDefault();
   hitMob(e);
 }, { passive: false });
+
+/* ================================================================
+   QR SCANNER (camera-based hunt)
+   ================================================================ */
+let html5QrScanner = null;
+
+function openScanner() {
+  showScreen('scanner-screen');
+  startScanner();
+}
+
+function closeScanner() {
+  stopScanner();
+  showScreen('home-screen');
+}
+
+function startScanner() {
+  stopScanner();
+  html5QrScanner = new Html5Qrcode('scanner-reader');
+  html5QrScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    onScanSuccess,
+    () => {} /* ignore scan failures (no QR in frame) */
+  ).catch(() => {
+    /* Camera access denied or unavailable */
+    document.querySelector('.scanner-hint').textContent =
+      'Camera not available. Check permissions and try again.';
+  });
+}
+
+function stopScanner() {
+  if (html5QrScanner) {
+    html5QrScanner.stop().catch(() => {});
+    html5QrScanner.clear();
+    html5QrScanner = null;
+  }
+}
+
+function onScanSuccess(decodedText) {
+  /* Extract mob key from scanned URL (e.g. ...?mob=zombie) */
+  let mobKey = null;
+  try {
+    const url = new URL(decodedText);
+    mobKey = url.searchParams.get('mob');
+  } catch {
+    /* Not a valid URL - ignore */
+    return;
+  }
+
+  if (!mobKey || !MOBS[mobKey]) return;
+
+  /* Block dragon if points threshold not met */
+  if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
+
+  /* Stop the scanner and unlock + fight */
+  stopScanner();
+  unlockMob(mobKey);
+  startGame(mobKey);
+}
+
+/* Stop scanner when navigating away */
+const _origShowScreen = showScreen;
+showScreen = function(id) {
+  if (id !== 'scanner-screen') stopScanner();
+  _origShowScreen(id);
+};
 
 /* ================================================================
    PRINTABLE CARDS
