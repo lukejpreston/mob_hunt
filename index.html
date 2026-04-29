@@ -641,8 +641,8 @@
     /* ===== SOUND TOGGLE BUTTON ===== */
     .sound-toggle {
       position: fixed;
-      top: 12px;
-      right: 12px;
+      bottom: 40px;
+      right: 40px;
       z-index: 9999;
       display: flex;
       align-items: center;
@@ -1244,20 +1244,21 @@ const MOBS = {
    ================================================================ */
 let audioCtx = null;
 let masterGain = null;
-let soundEnabled = true;
+let audioUnlocked = false;
+let soundEnabled = (function() {
+  const saved = localStorage.getItem('mobhunt_sound');
+  return saved !== 'off';
+})();
 
 function ensureAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     masterGain = audioCtx.createGain();
     masterGain.connect(audioCtx.destination);
-    /* Apply saved preference */
-    const saved = localStorage.getItem('mobhunt_sound');
-    soundEnabled = saved !== 'off';
     masterGain.gain.value = soundEnabled ? 1 : 0;
-    updateSoundToggleUI();
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  audioUnlocked = true;
   return audioCtx;
 }
 
@@ -1272,6 +1273,7 @@ function unlockAudio() {
   ensureAudio();
   /* Start background music on first interaction if sound is enabled */
   if (soundEnabled) startBgMusic();
+  updateSoundToggleUI();
   document.removeEventListener('click', unlockAudio);
   document.removeEventListener('touchstart', unlockAudio);
 }
@@ -1280,6 +1282,16 @@ document.addEventListener('touchstart', unlockAudio);
 
 /* ===== SOUND TOGGLE ===== */
 function toggleSound() {
+  /* If this is the first interaction, unlock audio first without toggling */
+  if (!audioUnlocked) {
+    ensureAudio();
+    /* Audio just unlocked — start music if preference is on, update UI */
+    if (soundEnabled) startBgMusic();
+    updateSoundToggleUI();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+    return;
+  }
   ensureAudio();
   soundEnabled = !soundEnabled;
   localStorage.setItem('mobhunt_sound', soundEnabled ? 'on' : 'off');
@@ -1296,7 +1308,7 @@ function updateSoundToggleUI() {
   const iconOn = document.getElementById('sound-icon-on');
   const iconOff = document.getElementById('sound-icon-off');
   const text = document.getElementById('sound-toggle-text');
-  if (soundEnabled) {
+  if (soundEnabled && audioUnlocked) {
     iconOn.style.display = '';
     iconOff.style.display = 'none';
     text.textContent = 'sound on';
