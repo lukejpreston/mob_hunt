@@ -388,6 +388,58 @@
       transform: none;
     }
 
+    /* ===== WITHER SKULL DISPLAY ===== */
+    .skull-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-left: 0.8rem;
+      color: #aaa;
+      font-size: 1.1rem;
+    }
+    .skull-display .skull-icon {
+      width: 20px;
+      height: 20px;
+      image-rendering: pixelated;
+    }
+
+    /* ===== SPECIAL EVENT OVERLAY ===== */
+    .event-notification {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      animation: dragonFadeIn 0.5s ease;
+    }
+    .event-notification h2 {
+      font-size: 1.8rem;
+      text-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+      margin-bottom: 1rem;
+      animation: dragonPulse 1.5s ease-in-out infinite;
+      text-align: center;
+      padding: 0 1rem;
+    }
+    .event-notification canvas {
+      width: 128px;
+      height: 128px;
+      image-rendering: pixelated;
+      margin-bottom: 1.5rem;
+    }
+    .event-notification .btn {
+      border-color: currentColor;
+      color: inherit;
+    }
+    .event-notification .btn:hover, .event-notification .btn:active {
+      background: currentColor;
+      color: #fff;
+    }
+    .warden-event { color: #00838f; }
+    .wither-event { color: #555; }
+
     /* ===== DRAGON UNLOCKED NOTIFICATION ===== */
     .dragon-notification {
       position: fixed;
@@ -604,7 +656,7 @@
   <div id="home-screen" class="screen active">
     <h1>MOB HUNT</h1>
     <p class="subtitle">Scan. Click. Slay.</p>
-    <div class="score-display">Total Score: <span id="total-score">0</span></div>
+    <div class="score-display">Total Score: <span id="total-score">0</span><span id="skull-display-home" class="skull-display" style="display:none;"><svg class="skull-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="8" fill="#333"/><rect x="5" y="10" width="6" height="3" fill="#222"/><rect x="5" y="4" width="2" height="2" fill="#555"/><rect x="9" y="4" width="2" height="2" fill="#555"/><rect x="6" y="8" width="1" height="2" fill="#555"/><rect x="9" y="8" width="1" height="2" fill="#555"/></svg> <span id="skull-count-home">0</span>/3</span></div>
     <button class="btn-hunt" onclick="openScanner()">
       <svg class="sword-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- Minecraft diamond sword pixel art -->
@@ -839,6 +891,260 @@ const MOBS = {
     darkColor: '#4a3668',
     eyeColor: '#000',
     description: 'Potion-brewing menace',
+  },
+  blaze: {
+    name: 'Blaze',
+    hearts: 10,
+    points: 20,
+    color: '#ff9800',
+    darkColor: '#e65100',
+    eyeColor: '#fff200',
+    description: 'Burns with fury',
+  },
+  bogged: {
+    name: 'Bogged',
+    hearts: 8,
+    points: 15,
+    color: '#6d8b5e',
+    darkColor: '#4a6340',
+    eyeColor: '#8bc34a',
+    description: 'Mossy skeleton archer',
+  },
+  breeze: {
+    name: 'Breeze',
+    hearts: 15,
+    points: 20,
+    color: '#b3e5fc',
+    darkColor: '#81d4fa',
+    eyeColor: '#fff',
+    description: 'Wind elemental menace',
+  },
+  cave_spider: {
+    name: 'Cave Spider',
+    hearts: 6,
+    points: 15,
+    color: '#1b5e20',
+    darkColor: '#0d3310',
+    eyeColor: '#e94560',
+    description: 'Small but venomous',
+  },
+  drowned: {
+    name: 'Drowned',
+    hearts: 10,
+    points: 12,
+    color: '#26a69a',
+    darkColor: '#00796b',
+    eyeColor: '#000',
+    description: 'Waterlogged undead',
+  },
+  elder_guardian: {
+    name: 'Elder Guardian',
+    hearts: 40,
+    points: 50,
+    color: '#b0bec5',
+    darkColor: '#78909c',
+    eyeColor: '#e91e63',
+    description: 'Ancient ocean boss',
+  },
+  endermite: {
+    name: 'Endermite',
+    hearts: 4,
+    points: 8,
+    color: '#7b1fa2',
+    darkColor: '#4a148c',
+    eyeColor: '#e040fb',
+    description: 'Tiny ender parasite',
+  },
+  evoker: {
+    name: 'Evoker',
+    hearts: 12,
+    points: 30,
+    color: '#5d4037',
+    darkColor: '#3e2723',
+    eyeColor: '#000',
+    description: 'Dark magic caster',
+  },
+  ghast: {
+    name: 'Ghast',
+    hearts: 5,
+    points: 18,
+    color: '#f5f5f5',
+    darkColor: '#e0e0e0',
+    eyeColor: '#e94560',
+    description: 'Crying fireball ghost',
+  },
+  guardian: {
+    name: 'Guardian',
+    hearts: 15,
+    points: 20,
+    color: '#80cbc4',
+    darkColor: '#4db6ac',
+    eyeColor: '#e91e63',
+    description: 'Laser-eyed fish',
+  },
+  hoglin: {
+    name: 'Hoglin',
+    hearts: 20,
+    points: 25,
+    color: '#795548',
+    darkColor: '#4e342e',
+    eyeColor: '#e94560',
+    description: 'Nether beast',
+  },
+  husk: {
+    name: 'Husk',
+    hearts: 10,
+    points: 12,
+    color: '#a08060',
+    darkColor: '#7a6040',
+    eyeColor: '#000',
+    description: 'Desert zombie',
+  },
+  magma_cube: {
+    name: 'Magma Cube',
+    hearts: 8,
+    points: 15,
+    color: '#bf360c',
+    darkColor: '#8b1a00',
+    eyeColor: '#ff9800',
+    description: 'Bouncy lava slime',
+  },
+  phantom: {
+    name: 'Phantom',
+    hearts: 10,
+    points: 18,
+    color: '#1a237e',
+    darkColor: '#0d1152',
+    eyeColor: '#76ff03',
+    description: 'Swoops from the sky',
+  },
+  piglin_brute: {
+    name: 'Piglin Brute',
+    hearts: 25,
+    points: 30,
+    color: '#e8a0a0',
+    darkColor: '#c07070',
+    eyeColor: '#000',
+    description: 'Gold-obsessed warrior',
+  },
+  pillager: {
+    name: 'Pillager',
+    hearts: 12,
+    points: 18,
+    color: '#5d6d7e',
+    darkColor: '#3d4d5e',
+    eyeColor: '#000',
+    description: 'Crossbow raider',
+  },
+  ravager: {
+    name: 'Ravager',
+    hearts: 50,
+    points: 40,
+    color: '#6d6d6d',
+    darkColor: '#4d4d4d',
+    eyeColor: '#e94560',
+    description: 'Massive raid beast',
+  },
+  shulker: {
+    name: 'Shulker',
+    hearts: 15,
+    points: 20,
+    color: '#9c27b0',
+    darkColor: '#6a1b80',
+    eyeColor: '#fff',
+    description: 'Box-shaped End mob',
+  },
+  silverfish: {
+    name: 'Silverfish',
+    hearts: 4,
+    points: 5,
+    color: '#9e9e9e',
+    darkColor: '#757575',
+    eyeColor: '#000',
+    description: 'Tiny stone pest',
+  },
+  slime: {
+    name: 'Slime',
+    hearts: 8,
+    points: 10,
+    color: '#76ff03',
+    darkColor: '#64dd17',
+    eyeColor: '#000',
+    description: 'Bouncy green blob',
+  },
+  stray: {
+    name: 'Stray',
+    hearts: 10,
+    points: 15,
+    color: '#b0bec5',
+    darkColor: '#78909c',
+    eyeColor: '#90caf9',
+    description: 'Frozen skeleton',
+  },
+  vex: {
+    name: 'Vex',
+    hearts: 7,
+    points: 15,
+    color: '#90caf9',
+    darkColor: '#64b5f6',
+    eyeColor: '#e94560',
+    description: 'Tiny flying phantom',
+  },
+  vindicator: {
+    name: 'Vindicator',
+    hearts: 12,
+    points: 20,
+    color: '#5d6d7e',
+    darkColor: '#3d4d5e',
+    eyeColor: '#000',
+    description: 'Axe-wielding raider',
+  },
+  wither_skeleton: {
+    name: 'Wither Skeleton',
+    hearts: 10,
+    points: 20,
+    color: '#333',
+    darkColor: '#1a1a1a',
+    eyeColor: '#555',
+    description: 'Dark bony warrior',
+  },
+  zoglin: {
+    name: 'Zoglin',
+    hearts: 20,
+    points: 25,
+    color: '#a1887f',
+    darkColor: '#795548',
+    eyeColor: '#e94560',
+    description: 'Zombified hoglin',
+  },
+  zombie_villager: {
+    name: 'Zombie Villager',
+    hearts: 10,
+    points: 12,
+    color: '#5b8731',
+    darkColor: '#3d5c1f',
+    eyeColor: '#000',
+    description: 'Infected villager',
+  },
+  warden: {
+    name: 'Warden',
+    hearts: 250,
+    points: 100,
+    color: '#00695c',
+    darkColor: '#004d40',
+    eyeColor: '#00e5ff',
+    description: 'Blind but deadly',
+    special: 'warden',
+  },
+  wither: {
+    name: 'Wither',
+    hearts: 150,
+    points: 250,
+    color: '#333',
+    darkColor: '#1a1a1a',
+    eyeColor: '#fff',
+    description: 'Three-headed terror',
+    special: 'wither',
   },
   enderdragon: {
     name: 'Ender Dragon',
@@ -1274,7 +1580,7 @@ let ambientInterval = null;
 function startAmbientSound(mobKey) {
   stopAmbientSound();
   playAmbientOnce(mobKey);
-  const delay = mobKey === 'enderdragon' ? 1500 : mobKey === 'enderman' ? 2000 : 3000 + Math.random() * 2000;
+  const delay = mobKey === 'enderdragon' ? 1500 : mobKey === 'warden' ? 1500 : mobKey === 'wither' ? 1500 : mobKey === 'enderman' ? 2000 : 3000 + Math.random() * 2000;
   ambientInterval = setInterval(() => playAmbientOnce(mobKey), delay);
 }
 
@@ -1484,6 +1790,84 @@ function playAmbientOnce(mobKey) {
       noise.stop(t + 0.7);
       break;
     }
+    case 'blaze': {
+      /* Fire crackling */
+      const noise = ctx.createBufferSource();
+      noise.buffer = createNoiseBuffer(ctx, 0.4);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass'; filt.frequency.value = 3000 + Math.random() * 2000; filt.Q.value = 2;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.04, t + 0.05);
+      g.gain.setValueAtTime(0.04, t + 0.2); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      noise.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      noise.start(t); noise.stop(t + 0.4);
+      break;
+    }
+    case 'ghast': {
+      /* Distant sad wail */
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      const f = 500 + Math.random() * 200;
+      osc.frequency.setValueAtTime(f, t);
+      osc.frequency.linearRampToValueAtTime(f * 0.8, t + 0.6);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.1);
+      g.gain.setValueAtTime(0.05, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.65);
+      break;
+    }
+    case 'slime':
+    case 'magma_cube': {
+      /* Squelchy bounce */
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300 + Math.random() * 100, t);
+      osc.frequency.exponentialRampToValueAtTime(80, t + 0.1);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.15);
+      break;
+    }
+    case 'warden': {
+      /* Deep heartbeat rumble */
+      for (let i = 0; i < 2; i++) {
+        const off = i * 0.25;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = 35;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.001, t + off);
+        g.gain.linearRampToValueAtTime(0.08, t + off + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.2);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t + off); osc.stop(t + off + 0.25);
+      }
+      break;
+    }
+    case 'wither': {
+      /* Ominous droning */
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(80 + Math.random() * 30, t);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 200;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.1);
+      g.gain.setValueAtTime(0.06, t + 0.4); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.65);
+      break;
+    }
+    default: {
+      /* Generic ambient: quiet low hum */
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 60 + Math.random() * 40;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.04, t + 0.1);
+      g.gain.setValueAtTime(0.04, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.55);
+      break;
+    }
   }
 }
 
@@ -1530,6 +1914,161 @@ function playDeathSound() {
   });
 }
 
+/* --- GENERIC MOB HURT: works for any mob not listed below --- */
+function playGenericHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  const f = 100 + Math.random() * 80;
+  osc.frequency.setValueAtTime(f, t);
+  osc.frequency.linearRampToValueAtTime(f * 0.6, t + 0.2);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.25, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.3);
+}
+
+/* --- BLAZE HURT: fire crackle --- */
+function playBlazeHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  for (let i = 0; i < 4; i++) {
+    const off = i * 0.04;
+    const noise = ctx.createBufferSource();
+    noise.buffer = createNoiseBuffer(ctx, 0.06);
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 2000 + Math.random() * 3000; f.Q.value = 3;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.2, t + off);
+    g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.05);
+    noise.connect(f); f.connect(g); g.connect(ctx.destination);
+    noise.start(t + off); noise.stop(t + off + 0.06);
+  }
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(80, t + 0.2);
+  const og = ctx.createGain(); og.gain.setValueAtTime(0.15, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.connect(og); og.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+}
+
+/* --- GHAST HURT: high wail --- */
+function playGhastHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(800, t);
+  osc.frequency.linearRampToValueAtTime(1200, t + 0.1);
+  osc.frequency.linearRampToValueAtTime(600, t + 0.3);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.4);
+}
+
+/* --- SLIME HURT: squishy squelch --- */
+function playSlimeHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(400, t);
+  osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.1);
+  const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 800;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0.15, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.15);
+}
+
+/* --- WARDEN HURT: deep rumble with vibration --- */
+function playWardenHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(50, t);
+  osc.frequency.linearRampToValueAtTime(30, t + 0.5);
+  const dist = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { const x = (i/128)-1; curve[i] = (Math.PI+100)*x/(Math.PI+100*Math.abs(x)); }
+  dist.curve = curve;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  osc.connect(dist); dist.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.55);
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.3);
+  const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 200;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0.2, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.35);
+}
+
+/* --- WITHER HURT: multi-tone screech --- */
+function playWitherHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  for (let i = 0; i < 3; i++) {
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    const freq = 150 + i * 100 + Math.random() * 50;
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.3, t + 0.3);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.35);
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.25);
+  const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1000; nf.Q.value = 2;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0.2, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.3);
+}
+
+/* --- PHANTOM HURT: swooshy screech --- */
+function playPhantomHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(1000, t);
+  osc.frequency.exponentialRampToValueAtTime(300, t + 0.2);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
+}
+
+/* --- GUARDIAN HURT: laser zap --- */
+function playGuardianHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(2000, t);
+  osc.frequency.exponentialRampToValueAtTime(400, t + 0.15);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+}
+
+/* --- SHULKER HURT: shell clack --- */
+function playShulkerHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.05);
+  const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000; f.Q.value = 10;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(t); noise.stop(t + 0.06);
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle'; osc.frequency.setValueAtTime(600, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+  const og = ctx.createGain(); og.gain.setValueAtTime(0.15, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc.connect(og); og.connect(ctx.destination); osc.start(t); osc.stop(t + 0.15);
+}
+
 /* --- Map mob keys to their hurt sound functions --- */
 const MOB_HURT_SOUNDS = {
   zombie: playZombieHurt,
@@ -1539,6 +2078,34 @@ const MOB_HURT_SOUNDS = {
   enderman: playEndermanHurt,
   witch: playWitchHurt,
   enderdragon: playEnderdragonHurt,
+  blaze: playBlazeHurt,
+  ghast: playGhastHurt,
+  slime: playSlimeHurt,
+  magma_cube: playSlimeHurt,
+  warden: playWardenHurt,
+  wither: playWitherHurt,
+  phantom: playPhantomHurt,
+  guardian: playGuardianHurt,
+  elder_guardian: playGuardianHurt,
+  shulker: playShulkerHurt,
+  cave_spider: playSpiderHurt,
+  wither_skeleton: playSkeletonHurt,
+  bogged: playSkeletonHurt,
+  stray: playSkeletonHurt,
+  husk: playZombieHurt,
+  drowned: playZombieHurt,
+  zombie_villager: playZombieHurt,
+  zoglin: playGenericHurt,
+  hoglin: playGenericHurt,
+  piglin_brute: playGenericHurt,
+  pillager: playGenericHurt,
+  vindicator: playGenericHurt,
+  evoker: playWitchHurt,
+  ravager: playGenericHurt,
+  silverfish: playGenericHurt,
+  endermite: playEndermanHurt,
+  vex: playGenericHurt,
+  breeze: playGenericHurt,
 };
 
 /* ================================================================
@@ -1580,8 +2147,12 @@ if (IS_ADMIN) {
 }
 
 function isMobUnlocked(mobKey) {
-  /* Dragon unlocks via points threshold, not QR */
+  /* Dragon unlocks via points threshold */
   if (mobKey === 'enderdragon') return isDragonUnlocked();
+  /* Warden unlocks via random event */
+  if (mobKey === 'warden') return isWardenUnlocked();
+  /* Wither unlocks via 3 wither skulls */
+  if (mobKey === 'wither') return isWitherUnlocked();
   const data = getPlayerData();
   return !!(data.unlockedMobs && data.unlockedMobs[mobKey]);
 }
@@ -1596,14 +2167,154 @@ function unlockMob(mobKey) {
 /* ================================================================
    ENDER DRAGON UNLOCK LOGIC
    ================================================================ */
-/* Threshold = sum of points from each non-dragon mob (one kill of each) */
-const DRAGON_UNLOCK_THRESHOLD = Object.entries(MOBS)
-  .filter(([key]) => key !== 'enderdragon')
-  .reduce((sum, [, mob]) => sum + mob.points, 0);
+const DRAGON_UNLOCK_THRESHOLD = 150;
 
 function isDragonUnlocked() {
   const data = getPlayerData();
   return data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
+}
+
+/* ================================================================
+   WARDEN UNLOCK LOGIC (random event)
+   - Must have killed at least 3 mobs total
+   - Each kill after that has escalating chance: starts 1/10, goes up by 1 each kill
+   - When triggered: "You are making too much noise, it is the WARDEN"
+   ================================================================ */
+function isWardenUnlocked() {
+  const data = getPlayerData();
+  return !!(data.wardenUnlocked);
+}
+
+function checkWardenEvent() {
+  const data = getPlayerData();
+  if (data.wardenUnlocked) return false;
+  const totalKills = Object.values(data.kills || {}).reduce((a, b) => a + b, 0);
+  if (totalKills < 3) return false;
+  /* wardenChance starts at 1 and increments each kill after the 3rd */
+  if (!data.wardenChance) data.wardenChance = 0;
+  data.wardenChance = Math.min((data.wardenChance || 0) + 1, 10);
+  savePlayerData(data);
+  /* Roll: chance is wardenChance out of 10 */
+  const roll = Math.random() * 10;
+  if (roll < data.wardenChance) {
+    data.wardenUnlocked = true;
+    savePlayerData(data);
+    return true;
+  }
+  return false;
+}
+
+function showWardenNotification() {
+  const overlay = document.createElement('div');
+  overlay.className = 'event-notification warden-event';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 128;
+
+  overlay.innerHTML = '<h2>You are making too much noise...<br>it is the WARDEN</h2>';
+  overlay.appendChild(canvas);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = 'Face the Warden';
+  btn.onclick = () => {
+    overlay.remove();
+    unlockMob('warden');
+    navigateTo('warden/hunt');
+  };
+  overlay.appendChild(btn);
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'btn btn-small';
+  dismissBtn.textContent = 'Not Yet...';
+  dismissBtn.style.marginTop = '0.5rem';
+  dismissBtn.onclick = () => overlay.remove();
+  overlay.appendChild(dismissBtn);
+
+  document.body.appendChild(overlay);
+
+  const ctx2d = canvas.getContext('2d');
+  let frame = 0;
+  function animWardenNotif() {
+    frame++;
+    drawMob(ctx2d, 'warden', 128, frame);
+    if (overlay.parentElement) requestAnimationFrame(animWardenNotif);
+  }
+  animWardenNotif();
+}
+
+/* ================================================================
+   WITHER UNLOCK LOGIC (wither skulls)
+   - Kill wither_skeleton to get a wither skull
+   - Need 3 skulls to unlock the Wither
+   - Skull count shown next to score when >= 1
+   ================================================================ */
+function getWitherSkulls() {
+  const data = getPlayerData();
+  return data.witherSkulls || 0;
+}
+
+function isWitherUnlocked() {
+  return getWitherSkulls() >= 3;
+}
+
+function addWitherSkull() {
+  const data = getPlayerData();
+  if (!data.witherSkulls) data.witherSkulls = 0;
+  data.witherSkulls++;
+  savePlayerData(data);
+  return data.witherSkulls;
+}
+
+function updateSkullDisplay() {
+  const skulls = getWitherSkulls();
+  const homeDisplay = document.getElementById('skull-display-home');
+  const homeCount = document.getElementById('skull-count-home');
+  if (skulls >= 1) {
+    homeDisplay.style.display = '';
+    homeCount.textContent = skulls;
+  } else {
+    homeDisplay.style.display = 'none';
+  }
+}
+
+function showWitherNotification() {
+  const overlay = document.createElement('div');
+  overlay.className = 'event-notification wither-event';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 128;
+
+  overlay.innerHTML = '<h2>You have 3 Wither Skulls,<br>the Wither is coming!</h2>';
+  overlay.appendChild(canvas);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = 'Fight the Wither';
+  btn.onclick = () => {
+    overlay.remove();
+    unlockMob('wither');
+    navigateTo('wither/hunt');
+  };
+  overlay.appendChild(btn);
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'btn btn-small';
+  dismissBtn.textContent = 'Not Yet...';
+  dismissBtn.style.marginTop = '0.5rem';
+  dismissBtn.onclick = () => overlay.remove();
+  overlay.appendChild(dismissBtn);
+
+  document.body.appendChild(overlay);
+
+  const ctx2d = canvas.getContext('2d');
+  let frame = 0;
+  function animWitherNotif() {
+    frame++;
+    drawMob(ctx2d, 'wither', 128, frame);
+    if (overlay.parentElement) requestAnimationFrame(animWitherNotif);
+  }
+  animWitherNotif();
 }
 
 function showDragonNotification() {
@@ -1668,6 +2379,7 @@ function showScreen(id) {
   if (id === 'home-screen') {
     const data = getPlayerData();
     document.getElementById('total-score').textContent = data.totalScore;
+    updateSkullDisplay();
   }
   if (id === 'select-screen') {
     const selData = getPlayerData();
@@ -1719,6 +2431,17 @@ function handleRoute() {
         showScreen('home-screen');
         return;
       }
+      /* Block special mobs if not unlocked */
+      if (MOBS[mobKey].special) {
+        if (mobKey === 'warden' && !isWardenUnlocked()) {
+          showScreen('home-screen');
+          return;
+        }
+        if (mobKey === 'wither' && !isWitherUnlocked()) {
+          showScreen('home-screen');
+          return;
+        }
+      }
       /* Scanning a QR / visiting hunt URL unlocks that mob */
       unlockMob(mobKey);
       startGame(mobKey);
@@ -1749,29 +2472,8 @@ function drawMob(ctx, mobKey, size, frame) {
   ctx.save();
   ctx.translate(0, bounce);
 
-  switch (mobKey) {
-    case 'zombie':
-      drawZombie(ctx, s, mob, frame);
-      break;
-    case 'skeleton':
-      drawSkeleton(ctx, s, mob, frame);
-      break;
-    case 'creeper':
-      drawCreeper(ctx, s, mob, frame);
-      break;
-    case 'spider':
-      drawSpider(ctx, s, mob, frame);
-      break;
-    case 'enderman':
-      drawEnderman(ctx, s, mob, frame);
-      break;
-    case 'witch':
-      drawWitch(ctx, s, mob, frame);
-      break;
-    case 'enderdragon':
-      drawEnderdragon(ctx, s, mob, frame);
-      break;
-  }
+  const drawFn = MOB_DRAW_FUNCTIONS[mobKey];
+  if (drawFn) drawFn(ctx, s, mob, frame);
 
   ctx.restore();
 }
@@ -2009,6 +2711,828 @@ function drawWitch(ctx, s, mob, frame) {
   ctx.fillRect(9*s, 14*s, 2*s, 2*s);
 }
 
+function drawBlaze(ctx, s, mob, frame) {
+  /* Floating rods */
+  ctx.fillStyle = '#ffcc02';
+  const rodAng = frame * 0.08;
+  for (let i = 0; i < 6; i++) {
+    const a = rodAng + i * Math.PI / 3;
+    const rx = 8*s + Math.cos(a) * 5*s;
+    const ry = 8*s + Math.sin(a) * 5*s;
+    ctx.fillRect(rx - 0.5*s, ry - 1.5*s, s, 3*s);
+  }
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 3*s, 6*s, 6*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 5*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 5*s, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 8*s, 4*s, 1*s);
+  /* Smoke particles */
+  ctx.fillStyle = '#ff5722';
+  ctx.globalAlpha = 0.3 + Math.sin(frame * 0.2) * 0.3;
+  ctx.fillRect((6 + Math.sin(frame * 0.15) * 2)*s, (1 + Math.cos(frame * 0.12) * 2)*s, s, s);
+  ctx.globalAlpha = 1;
+}
+
+function drawBogged(ctx, s, mob, frame) {
+  /* Like skeleton but mossy green */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 7*s);
+  /* Moss patches */
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(4*s, 1*s, 2*s, 1*s);
+  ctx.fillRect(10*s, 2*s, 2*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Nose/mouth */
+  ctx.fillStyle = '#555';
+  ctx.fillRect(7*s, 5*s, 2*s, 1*s);
+  ctx.fillRect(5*s, 6*s, 6*s, 1*s);
+  /* Spine */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(7*s, 8*s, 2*s, 5*s);
+  ctx.fillRect(5*s, 9*s, 6*s, 1*s);
+  ctx.fillRect(5*s, 11*s, 6*s, 1*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 8*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillRect(6*s, 13*s, 1*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 1*s, 3*s);
+}
+
+function drawBreeze(ctx, s, mob, frame) {
+  /* Swirling wind body */
+  ctx.fillStyle = mob.color;
+  ctx.globalAlpha = 0.6;
+  const wobble = Math.sin(frame * 0.12) * s;
+  ctx.fillRect(5*s + wobble, 3*s, 6*s, 8*s);
+  ctx.globalAlpha = 0.8;
+  ctx.fillRect(6*s, 4*s, 4*s, 6*s);
+  ctx.globalAlpha = 1;
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 5*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 5*s, 2*s, 2*s);
+  /* Wind particles */
+  ctx.fillStyle = mob.darkColor;
+  ctx.globalAlpha = 0.4;
+  for (let i = 0; i < 3; i++) {
+    const px = (3 + Math.sin(frame * 0.2 + i * 2) * 5);
+    const py = (2 + Math.cos(frame * 0.15 + i * 1.5) * 6);
+    ctx.fillRect(px*s, py*s, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCaveSpider(ctx, s, mob, frame) {
+  /* Small spider - compact body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(6*s, 6*s, 4*s, 3*s);
+  /* Head */
+  ctx.fillRect(4*s, 7*s, 3*s, 2*s);
+  /* Abdomen */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(9*s, 6*s, 3*s, 4*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(4*s, 7*s, 1*s, 1*s);
+  ctx.fillRect(6*s, 7*s, 1*s, 1*s);
+  /* Legs */
+  ctx.fillStyle = mob.color;
+  for (let i = 0; i < 4; i++) {
+    const legOff = Math.sin(frame * 0.15 + i * 1.5) * s;
+    ctx.fillRect((6 + i)*s, 4*s + legOff, 1*s, 2*s);
+    ctx.fillRect((6 + i)*s, 9*s - legOff, 1*s, 2*s);
+  }
+}
+
+function drawDrowned(ctx, s, mob, frame) {
+  /* Head - aqua zombie */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 8*s);
+  /* Dark top */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 1*s, 8*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 4*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 2*s);
+  /* Seaweed decoration */
+  ctx.fillStyle = '#2e7d32';
+  ctx.fillRect(11*s, 2*s, 1*s, 3*s);
+  /* Body */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 9*s, 6*s, 4*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.15) * 1.5*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 9*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 9*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillRect(6*s, 13*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s - legSwing, 2*s, 3*s);
+}
+
+function drawElderGuardian(ctx, s, mob, frame) {
+  /* Large spiky body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 3*s, 10*s, 10*s);
+  /* Spikes */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 1*s, 2*s, 2*s);
+  ctx.fillRect(10*s, 1*s, 2*s, 2*s);
+  ctx.fillRect(1*s, 6*s, 2*s, 2*s);
+  ctx.fillRect(13*s, 6*s, 2*s, 2*s);
+  ctx.fillRect(4*s, 13*s, 2*s, 2*s);
+  ctx.fillRect(10*s, 13*s, 2*s, 2*s);
+  /* Eye */
+  ctx.fillStyle = mob.eyeColor;
+  const eyePulse = Math.sin(frame * 0.1) * 0.5*s;
+  ctx.fillRect(6*s, 6*s + eyePulse, 4*s, 4*s);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(7*s, 7*s + eyePulse, 2*s, 2*s);
+  /* Tail */
+  ctx.fillStyle = mob.color;
+  const tailSway = Math.sin(frame * 0.08) * s;
+  ctx.fillRect(6*s + tailSway, 13*s, 4*s, 2*s);
+}
+
+function drawEndermite(ctx, s, mob, frame) {
+  /* Tiny segmented body */
+  const wiggle = Math.sin(frame * 0.2) * 0.5*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s + wiggle, 7*s, 3*s, 2*s);
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(8*s, 7*s, 2*s, 2*s);
+  ctx.fillRect(3*s + wiggle, 7*s, 2*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(3*s + wiggle, 7*s, 1*s, 1*s);
+  /* Particles */
+  ctx.globalAlpha = 0.4;
+  ctx.fillRect((4 + Math.sin(frame * 0.3) * 3)*s, (5 + Math.cos(frame * 0.25) * 3)*s, s, s);
+  ctx.globalAlpha = 1;
+}
+
+function drawEvoker(ctx, s, mob, frame) {
+  /* Like a villager with dark robes */
+  /* Head */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(5*s, 2*s, 6*s, 6*s);
+  /* Eyebrows */
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(5*s, 2*s, 6*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 4*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 1*s);
+  /* Nose */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(7*s, 5*s, 2*s, 2*s);
+  /* Robe - dark */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 8*s, 8*s, 5*s);
+  /* Arms in casting pose */
+  const castAnim = Math.sin(frame * 0.15) * 2*s;
+  ctx.fillRect(2*s, 8*s + castAnim, 2*s, 4*s);
+  ctx.fillRect(12*s, 8*s - castAnim, 2*s, 4*s);
+  /* Magic particles */
+  ctx.fillStyle = '#ff5722';
+  ctx.globalAlpha = 0.5 + Math.sin(frame * 0.2) * 0.3;
+  ctx.fillRect((2 + Math.sin(frame * 0.25) * 2)*s, (7 + castAnim/s)*s, s, s);
+  ctx.fillRect((13 + Math.cos(frame * 0.25))*s, (7 - castAnim/s)*s, s, s);
+  ctx.globalAlpha = 1;
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 13*s, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 2*s, 3*s);
+}
+
+function drawGhast(ctx, s, mob, frame) {
+  /* Large white body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 1*s, 10*s, 8*s);
+  /* Sad eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Sad mouth */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 6*s, 4*s, 2*s);
+  ctx.fillRect(7*s, 5*s, 2*s, 1*s);
+  /* Tentacles */
+  ctx.fillStyle = mob.darkColor;
+  for (let i = 0; i < 3; i++) {
+    const tentOff = Math.sin(frame * 0.1 + i) * s;
+    ctx.fillRect((4 + i * 3)*s, 9*s + tentOff, 2*s, 4*s);
+    ctx.fillRect((5 + i * 3)*s, 12*s + tentOff, 1*s, 2*s);
+  }
+  /* Tear */
+  ctx.fillStyle = '#90caf9';
+  const tearY = (6 + (frame * 0.1) % 4)*s;
+  ctx.globalAlpha = 0.6;
+  ctx.fillRect(5*s, tearY, s, s);
+  ctx.globalAlpha = 1;
+}
+
+function drawGuardian(ctx, s, mob, frame) {
+  /* Diamond-shaped body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 3*s, 6*s, 8*s);
+  ctx.fillRect(3*s, 5*s, 10*s, 4*s);
+  /* Spines */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 1*s, 1*s, 2*s);
+  ctx.fillRect(9*s, 1*s, 1*s, 2*s);
+  ctx.fillRect(1*s, 6*s, 2*s, 1*s);
+  ctx.fillRect(13*s, 6*s, 2*s, 1*s);
+  /* Eye */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 6*s, 4*s, 2*s);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(7*s, 6*s, 2*s, 2*s);
+  /* Tail */
+  const tailSway = Math.sin(frame * 0.1) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(7*s + tailSway, 11*s, 2*s, 3*s);
+}
+
+function drawHoglin(ctx, s, mob, frame) {
+  /* Large body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 5*s, 10*s, 6*s);
+  /* Head */
+  ctx.fillRect(1*s, 3*s, 5*s, 5*s);
+  /* Tusks */
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(1*s, 7*s, 1*s, 2*s);
+  ctx.fillRect(5*s, 7*s, 1*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(2*s, 4*s, 1*s, 1*s);
+  ctx.fillRect(4*s, 4*s, 1*s, 1*s);
+  /* Ears */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(1*s, 2*s, 2*s, 1*s);
+  ctx.fillRect(4*s, 2*s, 2*s, 1*s);
+  /* Legs */
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 11*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(7*s, 11*s - legSwing, 2*s, 3*s);
+  ctx.fillRect(10*s, 11*s + legSwing, 2*s, 3*s);
+}
+
+function drawHusk(ctx, s, mob, frame) {
+  /* Like zombie but sandy */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 8*s);
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 1*s, 8*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 4*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillRect(6*s, 7*s, 4*s, 1*s);
+  /* Body - tattered */
+  ctx.fillStyle = '#8d6e4a';
+  ctx.fillRect(5*s, 9*s, 6*s, 4*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.15) * 1.5*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 9*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 9*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillStyle = '#6d5030';
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillRect(6*s, 13*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s - legSwing, 2*s, 3*s);
+}
+
+function drawMagmaCube(ctx, s, mob, frame) {
+  /* Bouncing cube */
+  const squish = Math.abs(Math.sin(frame * 0.12)) * 2*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 3*s + squish, 8*s, 10*s - squish);
+  /* Lava cracks */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 5*s + squish, 2*s, 1*s);
+  ctx.fillRect(9*s, 5*s + squish, 2*s, 1*s);
+  ctx.fillRect(6*s, 8*s + squish/2, 4*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 4*s + squish, 1*s, 2*s);
+  ctx.fillRect(9*s, 4*s + squish, 1*s, 2*s);
+  /* Core glow */
+  ctx.fillStyle = '#ffeb3b';
+  ctx.globalAlpha = 0.3 + Math.sin(frame * 0.15) * 0.2;
+  ctx.fillRect(6*s, 6*s + squish/2, 4*s, 4*s);
+  ctx.globalAlpha = 1;
+}
+
+function drawPhantom(ctx, s, mob, frame) {
+  /* Wings spread */
+  const flapY = Math.sin(frame * 0.15) * 2*s;
+  ctx.fillStyle = mob.color;
+  /* Left wing */
+  ctx.fillRect(1*s, 5*s + flapY, 5*s, 2*s);
+  ctx.fillRect(0, 4*s + flapY, 3*s, 1*s);
+  /* Right wing */
+  ctx.fillRect(10*s, 5*s - flapY, 5*s, 2*s);
+  ctx.fillRect(13*s, 4*s - flapY, 3*s, 1*s);
+  /* Body */
+  ctx.fillRect(5*s, 4*s, 6*s, 4*s);
+  /* Head */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 3*s, 4*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(7*s, 3*s, 1*s, 1*s);
+  ctx.fillRect(9*s, 3*s, 1*s, 1*s);
+  /* Tail */
+  ctx.fillStyle = mob.color;
+  const tailSway = Math.sin(frame * 0.08) * s;
+  ctx.fillRect(7*s + tailSway, 8*s, 2*s, 2*s);
+  ctx.fillRect(7*s + tailSway * 1.5, 10*s, 1*s, 2*s);
+}
+
+function drawPiglinBrute(ctx, s, mob, frame) {
+  /* Head - piglin */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 7*s);
+  /* Snout */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 5*s, 4*s, 2*s);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(7*s, 5*s, 1*s, 1*s);
+  ctx.fillRect(9*s, 5*s, 1*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Ears */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(3*s, 1*s, 1*s, 3*s);
+  ctx.fillRect(12*s, 1*s, 1*s, 3*s);
+  /* Body - gold trimmed */
+  ctx.fillStyle = '#333';
+  ctx.fillRect(5*s, 8*s, 6*s, 5*s);
+  ctx.fillStyle = '#ffd700';
+  ctx.fillRect(5*s, 8*s, 6*s, 1*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.12) * 1.5*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  /* Axe in right hand */
+  ctx.fillStyle = '#ffd700';
+  ctx.fillRect(12*s, 6*s - armSwing, 2*s, 6*s);
+  ctx.fillStyle = '#9e9e9e';
+  ctx.fillRect(11*s, 6*s - armSwing, 3*s, 2*s);
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 13*s, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 2*s, 3*s);
+}
+
+function drawPillager(ctx, s, mob, frame) {
+  /* Head */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(5*s, 2*s, 6*s, 6*s);
+  /* Hood/bandana */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 2*s, 6*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 4*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 1*s);
+  /* Nose */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(7*s, 5*s, 2*s, 2*s);
+  /* Body - grey coat */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 8*s, 8*s, 5*s);
+  /* Belt */
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(4*s, 11*s, 8*s, 1*s);
+  /* Arms + crossbow */
+  const armSwing = Math.sin(frame * 0.1) * s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 8*s - armSwing, 2*s, 4*s);
+  /* Crossbow */
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(12*s, 9*s - armSwing, 3*s, 1*s);
+  ctx.fillRect(13*s, 8*s - armSwing, 1*s, 3*s);
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 13*s, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 2*s, 3*s);
+}
+
+function drawRavager(ctx, s, mob, frame) {
+  /* Massive body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(2*s, 3*s, 12*s, 7*s);
+  /* Head - large with horns */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(1*s, 1*s, 6*s, 5*s);
+  /* Horns */
+  ctx.fillStyle = '#9e9e9e';
+  ctx.fillRect(0, 0, 2*s, 2*s);
+  ctx.fillRect(5*s, 0, 2*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(2*s, 2*s, 1*s, 1*s);
+  ctx.fillRect(5*s, 2*s, 1*s, 1*s);
+  /* Mouth */
+  ctx.fillStyle = '#555';
+  ctx.fillRect(2*s, 4*s, 4*s, 1*s);
+  /* Legs */
+  const legSwing = Math.sin(frame * 0.1) * s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(3*s, 10*s + legSwing, 3*s, 4*s);
+  ctx.fillRect(6*s, 10*s - legSwing, 3*s, 4*s);
+  ctx.fillRect(9*s, 10*s + legSwing, 3*s, 4*s);
+}
+
+function drawShulker(ctx, s, mob, frame) {
+  /* Shell (opening/closing) */
+  const openAmt = (Math.sin(frame * 0.08) + 1) * 1.5*s;
+  ctx.fillStyle = mob.color;
+  /* Top shell */
+  ctx.fillRect(3*s, 2*s - openAmt, 10*s, 4*s);
+  /* Bottom shell */
+  ctx.fillRect(3*s, 8*s + openAmt, 10*s, 4*s);
+  /* Inner body - visible when open */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 6*s, 8*s, 2*s);
+  /* Eyes (inside) */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 6*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 6*s, 2*s, 1*s);
+  /* Shell texture */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 3*s - openAmt, 2*s, 1*s);
+  ctx.fillRect(9*s, 3*s - openAmt, 2*s, 1*s);
+  ctx.fillRect(5*s, 10*s + openAmt, 2*s, 1*s);
+  ctx.fillRect(9*s, 10*s + openAmt, 2*s, 1*s);
+}
+
+function drawSilverfish(ctx, s, mob, frame) {
+  /* Tiny segmented worm */
+  const wiggle = Math.sin(frame * 0.25) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s + wiggle, 7*s, 2*s, 2*s);
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 7*s, 3*s, 2*s);
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(8*s - wiggle * 0.5, 7*s, 2*s, 2*s);
+  ctx.fillRect(10*s - wiggle, 7*s, 2*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(3*s + wiggle, 7*s, 1*s, 1*s);
+  /* Antennae */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(2*s + wiggle, 6*s, 1*s, 1*s);
+  ctx.fillRect(4*s + wiggle, 6*s, 1*s, 1*s);
+}
+
+function drawSlime(ctx, s, mob, frame) {
+  /* Bouncing cube */
+  const squish = Math.abs(Math.sin(frame * 0.12)) * 2*s;
+  ctx.fillStyle = mob.color;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(3*s, 3*s + squish, 10*s, 10*s - squish);
+  ctx.globalAlpha = 1;
+  /* Inner core */
+  ctx.fillStyle = mob.darkColor;
+  ctx.globalAlpha = 0.8;
+  ctx.fillRect(5*s, 5*s + squish, 6*s, 6*s - squish/2);
+  ctx.globalAlpha = 1;
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 5*s + squish, 2*s, 2*s);
+  ctx.fillRect(9*s, 5*s + squish, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillRect(6*s, 9*s + squish/2, 4*s, 1*s);
+}
+
+function drawStray(ctx, s, mob, frame) {
+  /* Icy skeleton with tattered cloth */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 7*s);
+  /* Ice crystals */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(4*s, 1*s, 1*s, 1*s);
+  ctx.fillRect(11*s, 1*s, 1*s, 1*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillStyle = '#555';
+  ctx.fillRect(5*s, 6*s, 6*s, 1*s);
+  /* Tattered cloth */
+  ctx.fillStyle = '#aaa';
+  ctx.fillRect(4*s, 8*s, 8*s, 2*s);
+  /* Spine */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(7*s, 10*s, 2*s, 3*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 8*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillRect(6*s, 13*s, 1*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 1*s, 3*s);
+}
+
+function drawVex(ctx, s, mob, frame) {
+  /* Tiny flying ghost with sword */
+  const floatY = Math.sin(frame * 0.15) * 2*s;
+  ctx.fillStyle = mob.color;
+  ctx.globalAlpha = 0.8;
+  /* Body */
+  ctx.fillRect(6*s, 4*s + floatY, 4*s, 5*s);
+  ctx.globalAlpha = 1;
+  /* Head */
+  ctx.fillRect(5*s, 2*s + floatY, 6*s, 3*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 3*s + floatY, 1*s, 1*s);
+  ctx.fillRect(9*s, 3*s + floatY, 1*s, 1*s);
+  /* Wings */
+  ctx.fillStyle = mob.darkColor;
+  ctx.globalAlpha = 0.5;
+  const wingFlap = Math.sin(frame * 0.2) * s;
+  ctx.fillRect(3*s, 4*s + floatY + wingFlap, 3*s, 2*s);
+  ctx.fillRect(10*s, 4*s + floatY - wingFlap, 3*s, 2*s);
+  ctx.globalAlpha = 1;
+  /* Sword */
+  ctx.fillStyle = '#9e9e9e';
+  ctx.fillRect(11*s, 5*s + floatY, 1*s, 4*s);
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(10*s, 8*s + floatY, 3*s, 1*s);
+}
+
+function drawVindicator(ctx, s, mob, frame) {
+  /* Head */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(5*s, 2*s, 6*s, 6*s);
+  /* Eyebrows - angry */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 2*s, 6*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 4*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 1*s);
+  /* Nose */
+  ctx.fillStyle = '#c8a882';
+  ctx.fillRect(7*s, 5*s, 2*s, 2*s);
+  /* Body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 8*s, 8*s, 5*s);
+  /* Belt */
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(4*s, 11*s, 8*s, 1*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.12) * 1.5*s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  /* Axe arm raised */
+  ctx.fillRect(11*s, 6*s - Math.abs(armSwing), 2*s, 5*s);
+  /* Iron axe */
+  ctx.fillStyle = '#9e9e9e';
+  ctx.fillRect(12*s, 5*s - Math.abs(armSwing), 2*s, 3*s);
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 13*s, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 2*s, 3*s);
+}
+
+function drawWitherSkeleton(ctx, s, mob, frame) {
+  /* Dark skeleton */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 7*s);
+  /* Eyes */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillStyle = '#444';
+  ctx.fillRect(5*s, 6*s, 6*s, 1*s);
+  /* Spine */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(7*s, 8*s, 2*s, 5*s);
+  ctx.fillRect(5*s, 9*s, 6*s, 1*s);
+  ctx.fillRect(5*s, 11*s, 6*s, 1*s);
+  /* Arms + sword */
+  const armSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 8*s - armSwing, 2*s, 4*s);
+  /* Sword */
+  ctx.fillStyle = '#555';
+  ctx.fillRect(12*s, 6*s - armSwing, 1*s, 5*s);
+  /* Legs */
+  ctx.fillRect(6*s, 13*s, 1*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 1*s, 3*s);
+}
+
+function drawZoglin(ctx, s, mob, frame) {
+  /* Zombified hoglin - like hoglin but decayed */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 5*s, 10*s, 6*s);
+  /* Head */
+  ctx.fillRect(1*s, 3*s, 5*s, 5*s);
+  /* Exposed bone */
+  ctx.fillStyle = '#bbb';
+  ctx.fillRect(3*s, 6*s, 2*s, 2*s);
+  /* Tusks */
+  ctx.fillStyle = '#ddd';
+  ctx.fillRect(1*s, 7*s, 1*s, 2*s);
+  ctx.fillRect(5*s, 7*s, 1*s, 2*s);
+  /* Eyes - red */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(2*s, 4*s, 1*s, 1*s);
+  ctx.fillRect(4*s, 4*s, 1*s, 1*s);
+  /* Ears */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(1*s, 2*s, 2*s, 1*s);
+  ctx.fillRect(4*s, 2*s, 2*s, 1*s);
+  /* Legs */
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 11*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(7*s, 11*s - legSwing, 2*s, 3*s);
+  ctx.fillRect(10*s, 11*s + legSwing, 2*s, 3*s);
+}
+
+function drawZombieVillager(ctx, s, mob, frame) {
+  /* Green villager head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 8*s);
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 1*s, 8*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 4*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 2*s);
+  /* Big nose (villager trait) */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(6*s, 6*s, 4*s, 2*s);
+  /* Body */
+  ctx.fillStyle = '#4a3628';
+  ctx.fillRect(5*s, 9*s, 6*s, 4*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.15) * 1.5*s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 9*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 9*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillStyle = '#336';
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillRect(6*s, 13*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s - legSwing, 2*s, 3*s);
+}
+
+function drawWarden(ctx, s, mob, frame) {
+  /* Massive dark teal body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 2*s, 8*s, 5*s);
+  /* Horns/antlers */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 0, 2*s, 2*s);
+  ctx.fillRect(10*s, 0, 2*s, 2*s);
+  /* Eyes - glowing blue (no actual eyes, sonic sensors) */
+  ctx.fillStyle = mob.eyeColor;
+  const pulse = Math.sin(frame * 0.15);
+  ctx.globalAlpha = 0.5 + pulse * 0.3;
+  ctx.fillRect(5*s, 4*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 1*s);
+  ctx.globalAlpha = 1;
+  /* Chest - sculk pattern */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.globalAlpha = 0.3 + pulse * 0.2;
+  ctx.fillRect(6*s, 5*s, 4*s, 1*s);
+  ctx.globalAlpha = 1;
+  /* Body - wide */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 7*s, 10*s, 5*s);
+  /* Arms - massive */
+  const armSwing = Math.sin(frame * 0.08) * s;
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(1*s, 7*s + armSwing, 2*s, 6*s);
+  ctx.fillRect(13*s, 7*s - armSwing, 2*s, 6*s);
+  /* Legs */
+  const legSwing = Math.sin(frame * 0.1) * s;
+  ctx.fillRect(4*s, 12*s + legSwing, 3*s, 4*s);
+  ctx.fillRect(9*s, 12*s - legSwing, 3*s, 4*s);
+  /* Sonic particles */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.globalAlpha = 0.3;
+  for (let i = 0; i < 2; i++) {
+    const px = 2 + Math.sin(frame * 0.15 + i * 3) * 5;
+    const py = 1 + Math.cos(frame * 0.12 + i * 2) * 4;
+    ctx.fillRect(px*s, py*s, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawWither(ctx, s, mob, frame) {
+  /* Three heads */
+  ctx.fillStyle = mob.color;
+  /* Center head */
+  ctx.fillRect(5*s, 1*s, 6*s, 5*s);
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(6*s, 3*s, 2*s, 1*s);
+  ctx.fillRect(8*s, 3*s, 2*s, 1*s);
+  /* Left head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(0, 2*s, 4*s, 4*s);
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(1*s, 3*s, 1*s, 1*s);
+  ctx.fillRect(2*s, 3*s, 1*s, 1*s);
+  /* Right head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(12*s, 2*s, 4*s, 4*s);
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(13*s, 3*s, 1*s, 1*s);
+  ctx.fillRect(14*s, 3*s, 1*s, 1*s);
+  /* Spine / ribs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(6*s, 6*s, 4*s, 3*s);
+  ctx.fillRect(4*s, 6*s, 8*s, 1*s);
+  ctx.fillRect(4*s, 8*s, 8*s, 1*s);
+  /* Tail */
+  const tailSway = Math.sin(frame * 0.1) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(7*s + tailSway, 9*s, 2*s, 2*s);
+  ctx.fillRect(7*s + tailSway * 1.5, 11*s, 2*s, 2*s);
+  ctx.fillRect(7*s + tailSway * 2, 13*s, 1*s, 2*s);
+  /* Wither aura */
+  ctx.fillStyle = '#555';
+  ctx.globalAlpha = 0.2 + Math.sin(frame * 0.2) * 0.15;
+  for (let i = 0; i < 3; i++) {
+    const px = 3 + Math.sin(frame * 0.15 + i * 2) * 5;
+    const py = 0 + Math.cos(frame * 0.12 + i * 2.5) * 7;
+    ctx.fillRect(px*s, py*s, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* Map mob keys to draw functions */
+const MOB_DRAW_FUNCTIONS = {
+  zombie: drawZombie,
+  skeleton: drawSkeleton,
+  creeper: drawCreeper,
+  spider: drawSpider,
+  enderman: drawEnderman,
+  witch: drawWitch,
+  enderdragon: drawEnderdragon,
+  blaze: drawBlaze,
+  bogged: drawBogged,
+  breeze: drawBreeze,
+  cave_spider: drawCaveSpider,
+  drowned: drawDrowned,
+  elder_guardian: drawElderGuardian,
+  endermite: drawEndermite,
+  evoker: drawEvoker,
+  ghast: drawGhast,
+  guardian: drawGuardian,
+  hoglin: drawHoglin,
+  husk: drawHusk,
+  magma_cube: drawMagmaCube,
+  phantom: drawPhantom,
+  piglin_brute: drawPiglinBrute,
+  pillager: drawPillager,
+  ravager: drawRavager,
+  shulker: drawShulker,
+  silverfish: drawSilverfish,
+  slime: drawSlime,
+  stray: drawStray,
+  vex: drawVex,
+  vindicator: drawVindicator,
+  wither_skeleton: drawWitherSkeleton,
+  zoglin: drawZoglin,
+  zombie_villager: drawZombieVillager,
+  warden: drawWarden,
+  wither: drawWither,
+};
+
 /* ================================================================
    MOB SELECT GRID
    ================================================================ */
@@ -2020,8 +3544,10 @@ function renderMobGrid() {
   for (const [key, mob] of Object.entries(MOBS)) {
     /* Ender Dragon has a special points-threshold lock */
     const isDragonLocked = mob.locked && !dragonPointsUnlocked;
+    /* Special mobs: warden (random event) and wither (3 skulls) */
+    const isSpecialLocked = mob.special && !isMobUnlocked(key);
     /* All other mobs are locked until scanned or "Fight Now!" */
-    const isQrLocked = !isDragonLocked && !isMobUnlocked(key);
+    const isQrLocked = !isDragonLocked && !isSpecialLocked && !isMobUnlocked(key);
 
     const card = document.createElement('div');
 
@@ -2034,6 +3560,23 @@ function renderMobGrid() {
         <div class="mob-name">???</div>
         <div class="mob-info">Locked</div>
         <div class="lock-info">Need ${DRAGON_UNLOCK_THRESHOLD} pts to unlock</div>
+      `;
+      const canvas = card.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      drawMob(ctx, key, 64, 0);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, 64, 64);
+    } else if (isSpecialLocked) {
+      /* Special mob locked behind event */
+      card.className = 'mob-card locked dragon-locked';
+      let lockMsg = 'Locked';
+      if (key === 'warden') lockMsg = 'Random event';
+      if (key === 'wither') lockMsg = `Need 3 Wither Skulls (${getWitherSkulls()}/3)`;
+      card.innerHTML = `
+        <div class="lock-icon">&#128274;</div>
+        <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
+        <div class="mob-name">???</div>
+        <div class="mob-info">${lockMsg}</div>
       `;
       const canvas = card.querySelector('canvas');
       const ctx = canvas.getContext('2d');
@@ -2313,6 +3856,7 @@ function mobDied() {
     const mob = MOBS[currentMob];
     const data = getPlayerData();
     const wasUnlocked = data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
+    const hadWitherSkulls = data.witherSkulls || 0;
     data.totalScore += mob.points;
     if (!data.kills[currentMob]) data.kills[currentMob] = 0;
     data.kills[currentMob]++;
@@ -2320,16 +3864,38 @@ function mobDied() {
 
     const nowUnlocked = data.totalScore >= DRAGON_UNLOCK_THRESHOLD;
 
+    /* Wither skull: killing a wither_skeleton grants a skull */
+    let witherJustUnlocked = false;
+    if (currentMob === 'wither_skeleton') {
+      const newSkulls = addWitherSkull();
+      if (newSkulls >= 3 && hadWitherSkulls < 3) {
+        witherJustUnlocked = true;
+      }
+    }
+
     /* Show victory */
     document.getElementById('victory-points').textContent = `+${mob.points}`;
     const victoryCanvas = document.getElementById('victory-mob-canvas');
     const ctx = victoryCanvas.getContext('2d');
     drawMob(ctx, currentMob, 96, 0);
     showScreen('victory-screen');
+    updateSkullDisplay();
 
     /* Check if dragon was just unlocked */
     if (!wasUnlocked && nowUnlocked && currentMob !== 'enderdragon') {
       setTimeout(() => showDragonNotification(), 1500);
+    }
+
+    /* Check if wither was just unlocked */
+    if (witherJustUnlocked) {
+      setTimeout(() => showWitherNotification(), 1500);
+    }
+
+    /* Check warden random event (not on special bosses) */
+    if (!witherJustUnlocked && currentMob !== 'warden' && currentMob !== 'wither' && currentMob !== 'enderdragon') {
+      if (checkWardenEvent()) {
+        setTimeout(() => showWardenNotification(), 1500);
+      }
     }
   }, 900);
 }
@@ -2445,6 +4011,12 @@ function onScanSuccess(decodedText) {
     return;
   }
 
+  /* Block special mobs - they can't be QR scanned */
+  if (MOBS[mobKey].special) {
+    console.log('onScanSuccess: special mob, cannot QR scan');
+    return;
+  }
+
   /* Store the mob key and let stopScanner + navigate happen outside the callback */
   console.log('onScanSuccess: found mob', mobKey);
   pendingScanMob = mobKey;
@@ -2494,6 +4066,9 @@ function renderPrintCards() {
   grid.innerHTML = '';
 
   for (const [key, mob] of Object.entries(MOBS)) {
+    /* Skip special/boss mobs - they unlock through gameplay, not QR */
+    if (mob.locked || mob.special) continue;
+
     const card = document.createElement('div');
     card.className = 'print-card';
 
@@ -2537,8 +4112,10 @@ function renderPrintCards() {
    ================================================================ */
 function resetData() {
   if (confirm('Reset all progress? This cannot be undone!')) {
-    savePlayerData({ totalScore: 0, kills: {} });
+    savePlayerData({ totalScore: 0, kills: {}, witherSkulls: 0, wardenChance: 0, wardenUnlocked: false });
     document.getElementById('total-score').textContent = '0';
+    updateSkullDisplay();
+    window._dragonNotifShown = false;
   }
 }
 
@@ -2570,6 +4147,7 @@ function init() {
   const data = getPlayerData();
   document.getElementById('total-score').textContent = data.totalScore;
   document.getElementById('select-total-score').textContent = data.totalScore;
+  updateSkullDisplay();
   renderMobGrid();
 
   /* Redirect legacy ?mob= and ?print URLs to hash routes */
