@@ -677,6 +677,176 @@
       .sound-toggle { display: none !important; }
     }
 
+    /* ===== INTRO SCREEN ===== */
+    body:has(#intro-screen.active) .sound-toggle { display: none; }
+    #intro-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 2rem;
+      text-align: center;
+    }
+    #intro-screen h1 {
+      font-size: 3rem;
+      text-shadow: 0 0 20px #e94560, 0 0 40px #e94560;
+      color: #e94560;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.2em;
+    }
+    #intro-screen .subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+    .intro-description {
+      font-size: 0.95rem;
+      color: #bbb;
+      max-width: 400px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .intro-storage-section {
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+    .intro-storage-section p {
+      font-size: 0.85rem;
+      color: #999;
+      margin-bottom: 0.8rem;
+    }
+    .btn-storage {
+      display: block;
+      width: 100%;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 2px solid #4caf50;
+      background: transparent;
+      color: #4caf50;
+      cursor: pointer;
+      margin: 0.5rem 0;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .btn-storage:hover, .btn-storage:active {
+      background: #4caf50;
+      color: #fff;
+    }
+    .btn-storage-deny {
+      border-color: #888;
+      color: #888;
+      font-size: 0.8rem;
+    }
+    .btn-storage-deny:hover, .btn-storage-deny:active {
+      background: #888;
+      color: #fff;
+    }
+    .intro-enter-section {
+      margin-top: 1rem;
+    }
+    .btn-enter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1.2rem 3rem;
+      font-size: 1.8rem;
+      font-family: inherit;
+      border: 3px solid #e94560;
+      background: transparent;
+      color: #e94560;
+      cursor: pointer;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      margin: 0.6rem auto;
+    }
+    .btn-enter:hover, .btn-enter:active {
+      background: #e94560;
+      color: #fff;
+    }
+    .btn-enter-silent {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      border: 2px solid #888;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      margin: 0.3rem auto 0;
+    }
+    .btn-enter-silent:hover, .btn-enter-silent:active {
+      background: #888;
+      color: #fff;
+    }
+    .btn-enter-silent svg {
+      width: 16px;
+      height: 16px;
+      fill: #888;
+      transition: fill 0.2s;
+    }
+    .btn-enter-silent:hover svg, .btn-enter-silent:active svg {
+      fill: #fff;
+    }
+    .intro-enter-section .storage-chosen-label {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+
+    /* ===== STORAGE PREFERENCES MODAL ===== */
+    .storage-prefs-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    .storage-prefs-overlay.active { display: flex; }
+    .storage-prefs-modal {
+      background: #16213e;
+      border: 2px solid #e94560;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .storage-prefs-modal h3 {
+      font-size: 1.2rem;
+      color: #e94560;
+      margin-bottom: 1rem;
+      letter-spacing: 0.1em;
+    }
+    .storage-prefs-modal p {
+      font-size: 0.85rem;
+      color: #999;
+      margin-bottom: 1rem;
+    }
+    .storage-prefs-modal .btn-storage {
+      margin: 0.4rem auto;
+    }
+    .storage-prefs-modal .btn-close-prefs {
+      margin-top: 1rem;
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      border: 1px solid #555;
+      background: transparent;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .storage-prefs-modal .btn-close-prefs:hover {
+      border-color: #888;
+      color: #888;
+    }
+
     /* ===== PRINT MEDIA ===== */
     @media print {
       html, body {
@@ -726,8 +896,33 @@
     <span id="sound-toggle-text">sound off</span>
   </button>
 
+  <!-- ===== INTRO ===== -->
+  <div id="intro-screen" class="screen active">
+    <h1>MOB HUNT</h1>
+    <p class="subtitle">Scan. Click. Slay.</p>
+    <p class="intro-description">
+      Hunt Minecraft mobs in the real world! Scan QR codes to discover mobs, tap to attack, and rack up your score. Collect wither skulls, trigger the Warden, and unlock the Ender Dragon. How many can you slay?
+    </p>
+    <div class="intro-storage-section">
+      <p>This game uses cookies and local storage to save your score and progress between visits.</p>
+      <button class="btn-storage" onclick="chooseStorage(true)" id="intro-allow-btn">Allow cookies &amp; storage</button>
+      <button class="btn-storage btn-storage-deny" onclick="chooseStorage(false)" id="intro-deny-btn">Opt out &mdash; I understand when I refresh my score will be reset</button>
+    </div>
+    <div class="intro-enter-section" id="intro-enter-section" style="display:none;">
+      <button class="btn-enter" onclick="enterGame(true)">Enter</button>
+      <button class="btn-enter-silent" onclick="enterGame(false)">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1C7 1 3 5 3 10v2c0 .55-.45 1-1 1s-1 .45-1 1v2c0 .55.45 1 1 1s1 .45 1 1c0 1.66 1.34 3 3 3h2c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1H6v-3c0-3.31 2.69-6 6-6s6 2.69 6 6v3h-2c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h2c1.66 0 3-1.34 3-3 0-.55.45-1 1-1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1-.45-1-1v-2c0-5-4-9-9-9z"/>
+          <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        Enter without audio
+      </button>
+      <p class="storage-chosen-label" id="storage-chosen-label"></p>
+    </div>
+  </div>
+
   <!-- ===== HOME ===== -->
-  <div id="home-screen" class="screen active">
+  <div id="home-screen" class="screen">
     <h1>MOB HUNT</h1>
     <p class="subtitle">Scan. Click. Slay.</p>
     <div class="score-display">Total Score: <span id="total-score">0</span><span id="skull-display-home" class="skull-display" style="display:none;"><svg class="skull-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="8" fill="#333"/><rect x="5" y="10" width="6" height="3" fill="#222"/><rect x="5" y="4" width="2" height="2" fill="#555"/><rect x="9" y="4" width="2" height="2" fill="#555"/><rect x="6" y="8" width="1" height="2" fill="#555"/><rect x="9" y="8" width="1" height="2" fill="#555"/></svg> <span id="skull-count-home">0</span>/3</span></div>
@@ -760,6 +955,18 @@
     <button class="btn btn-small" onclick="navigateTo('list')">Mob List</button>
     <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
     <button class="btn btn-small" onclick="navigateTo('print')" id="home-print-btn" style="display:none;">Print</button>
+    <button class="btn btn-small" onclick="openStoragePrefs()">Change storage preferences</button>
+  </div>
+
+  <!-- ===== STORAGE PREFERENCES MODAL ===== -->
+  <div class="storage-prefs-overlay" id="storage-prefs-overlay">
+    <div class="storage-prefs-modal">
+      <h3>Storage Preferences</h3>
+      <p>Choose whether to allow cookies and local storage to save your progress.</p>
+      <button class="btn-storage" onclick="updateStoragePref(true)">Allow cookies &amp; storage</button>
+      <button class="btn-storage btn-storage-deny" onclick="updateStoragePref(false)">Deny &mdash; I understand when I refresh my score will be reset</button>
+      <button class="btn-close-prefs" onclick="closeStoragePrefs()">Cancel</button>
+    </div>
   </div>
 
   <!-- ===== MOB SELECT ===== -->
@@ -1240,14 +1447,132 @@ const MOBS = {
 };
 
 /* ================================================================
+   STORAGE CONSENT
+   We track consent in sessionStorage so the intro only shows once
+   per tab. If the user allowed persistent storage, we also write
+   a localStorage flag so returning visits can skip the intro.
+   ================================================================ */
+let storageAllowed = false;       /* in-memory flag for this session */
+let storageChoiceMade = false;    /* has the user chosen yet? */
+
+(function loadStorageConsent() {
+  /* Check sessionStorage first (survives refresh within same tab) */
+  try {
+    const session = sessionStorage.getItem('mobhunt_storage_consent');
+    if (session === 'allowed') { storageAllowed = true; storageChoiceMade = true; return; }
+    if (session === 'denied')  { storageAllowed = false; storageChoiceMade = true; return; }
+  } catch (e) { /* sessionStorage blocked */ }
+  /* Fall back to localStorage (returning visitor who allowed) */
+  try {
+    const persistent = localStorage.getItem('mobhunt_storage_consent');
+    if (persistent === 'allowed') { storageAllowed = true; storageChoiceMade = true; return; }
+  } catch (e) { /* localStorage blocked */ }
+})();
+
+function setStorageConsent(allow) {
+  storageAllowed = allow;
+  storageChoiceMade = true;
+  try { sessionStorage.setItem('mobhunt_storage_consent', allow ? 'allowed' : 'denied'); } catch (e) {}
+  if (allow) {
+    try { localStorage.setItem('mobhunt_storage_consent', 'allowed'); } catch (e) {}
+  } else {
+    /* Clear any previously persisted data */
+    try { localStorage.removeItem('mobhunt_storage_consent'); } catch (e) {}
+    try { localStorage.removeItem('mobhunt_sound'); } catch (e) {}
+    /* Delete the game cookie */
+    document.cookie = 'mob_hunt_data=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax';
+  }
+}
+
+/* ===== INTRO SCREEN LOGIC ===== */
+function chooseStorage(allow) {
+  setStorageConsent(allow);
+  /* Show enter buttons */
+  document.getElementById('intro-enter-section').style.display = '';
+  document.getElementById('intro-allow-btn').disabled = true;
+  document.getElementById('intro-deny-btn').disabled = true;
+  document.getElementById('intro-allow-btn').style.opacity = allow ? '1' : '0.4';
+  document.getElementById('intro-deny-btn').style.opacity = allow ? '0.4' : '1';
+  document.getElementById('storage-chosen-label').textContent = allow
+    ? 'Storage: allowed'
+    : 'Storage: opted out';
+}
+
+function enterGame(withAudio) {
+  if (withAudio) {
+    soundEnabled = true;
+  } else {
+    soundEnabled = false;
+  }
+  if (storageAllowed) {
+    try { localStorage.setItem('mobhunt_sound', soundEnabled ? 'on' : 'off'); } catch (e) {}
+  }
+  /* Initialise scores & mob grid before showing screens */
+  const data = getPlayerData();
+  document.getElementById('total-score').textContent = data.totalScore;
+  document.getElementById('select-total-score').textContent = data.totalScore;
+  updateSkullDisplay();
+  renderMobGrid();
+  /* Hide intro, show home */
+  document.getElementById('intro-screen').classList.remove('active');
+  /* Redirect legacy params or route normally */
+  if (!redirectLegacyParams()) {
+    handleRoute();
+  }
+  /* Unlock audio if entering with sound */
+  if (withAudio) {
+    ensureAudio();
+    masterGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.05);
+    startBgMusic();
+    updateSoundToggleUI();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+  } else {
+    updateSoundToggleUI();
+  }
+  /* Show dragon notification if already unlocked */
+  if (isDragonUnlocked() && !data.kills['enderdragon']) {
+    showDragonNotification();
+  }
+}
+
+/* ===== STORAGE PREFERENCES MODAL ===== */
+function openStoragePrefs() {
+  document.getElementById('storage-prefs-overlay').classList.add('active');
+}
+
+function closeStoragePrefs() {
+  document.getElementById('storage-prefs-overlay').classList.remove('active');
+}
+
+function updateStoragePref(allow) {
+  const wasAllowed = storageAllowed;
+  setStorageConsent(allow);
+  closeStoragePrefs();
+  /* If switching from allowed→denied, data is already cleared by setStorageConsent.
+     Reset in-memory state to defaults. */
+  if (wasAllowed && !allow) {
+    /* In-memory player data will just return defaults on next getPlayerData() call */
+    document.getElementById('total-score').textContent = '0';
+    updateSkullDisplay();
+  }
+}
+
+/* ================================================================
    SOUND ENGINE (Web Audio API - Minecraft-style synthesis)
    ================================================================ */
 let audioCtx = null;
 let masterGain = null;
 let audioUnlocked = false;
 let soundEnabled = (function() {
-  const saved = localStorage.getItem('mobhunt_sound');
-  return saved !== 'off';
+  if (storageAllowed) {
+    try {
+      const saved = localStorage.getItem('mobhunt_sound');
+      if (saved === 'on') return true;
+      if (saved === 'off') return false;
+    } catch (e) {}
+  }
+  return false; /* default off until explicitly turned on */
 })();
 
 function ensureAudio() {
@@ -1282,19 +1607,15 @@ document.addEventListener('touchstart', unlockAudio);
 
 /* ===== SOUND TOGGLE ===== */
 function toggleSound() {
-  /* If this is the first interaction, unlock audio first without toggling */
   if (!audioUnlocked) {
-    ensureAudio();
-    /* Audio just unlocked — start music if preference is on, update UI */
-    if (soundEnabled) startBgMusic();
-    updateSoundToggleUI();
     document.removeEventListener('click', unlockAudio);
     document.removeEventListener('touchstart', unlockAudio);
-    return;
   }
   ensureAudio();
   soundEnabled = !soundEnabled;
-  localStorage.setItem('mobhunt_sound', soundEnabled ? 'on' : 'off');
+  if (storageAllowed) {
+    try { localStorage.setItem('mobhunt_sound', soundEnabled ? 'on' : 'off'); } catch (e) {}
+  }
   masterGain.gain.setTargetAtTime(soundEnabled ? 1 : 0, audioCtx.currentTime, 0.05);
   updateSoundToggleUI();
   if (soundEnabled) {
@@ -2406,14 +2727,19 @@ const MOB_HURT_SOUNDS = {
 
 /* ================================================================
    COOKIE HELPERS
+   Respects storage consent — falls back to in-memory when denied.
    ================================================================ */
+let _inMemoryPlayerData = null; /* fallback when cookies denied */
+
 function setCookie(name, value, days = 365) {
+  if (!storageAllowed) return; /* honour opt-out */
   const d = new Date();
   d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};expires=${d.toUTCString()};path=/;SameSite=Lax`;
 }
 
 function getCookie(name) {
+  if (!storageAllowed) return null; /* honour opt-out */
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   if (match) {
     try { return JSON.parse(decodeURIComponent(match[2])); }
@@ -2423,11 +2749,20 @@ function getCookie(name) {
 }
 
 function getPlayerData() {
-  return getCookie('mob_hunt_data') || { totalScore: 0, kills: {} };
+  if (storageAllowed) {
+    const cookieData = getCookie('mob_hunt_data');
+    if (cookieData) return cookieData;
+  }
+  /* Use in-memory fallback (resets on refresh when storage denied) */
+  if (!_inMemoryPlayerData) {
+    _inMemoryPlayerData = { totalScore: 0, kills: {} };
+  }
+  return _inMemoryPlayerData;
 }
 
 function savePlayerData(data) {
-  setCookie('mob_hunt_data', data);
+  _inMemoryPlayerData = data; /* always keep in memory */
+  setCookie('mob_hunt_data', data); /* only persists if allowed */
 }
 
 /* ================================================================
@@ -4505,22 +4840,30 @@ function redirectLegacyParams() {
    INIT
    ================================================================ */
 function init() {
-  const data = getPlayerData();
-  document.getElementById('total-score').textContent = data.totalScore;
-  document.getElementById('select-total-score').textContent = data.totalScore;
-  updateSkullDisplay();
-  renderMobGrid();
+  /* If user has already consented (returning visitor or same session),
+     skip the intro and go straight to the game. */
+  if (storageChoiceMade) {
+    document.getElementById('intro-screen').classList.remove('active');
 
-  /* Redirect legacy ?mob= and ?print URLs to hash routes */
-  if (redirectLegacyParams()) return;
+    const data = getPlayerData();
+    document.getElementById('total-score').textContent = data.totalScore;
+    document.getElementById('select-total-score').textContent = data.totalScore;
+    updateSkullDisplay();
+    renderMobGrid();
 
-  /* Route based on current hash */
-  handleRoute();
+    /* Redirect legacy ?mob= and ?print URLs to hash routes */
+    if (redirectLegacyParams()) return;
 
-  /* Show dragon notification on load if already unlocked and never fought */
-  if (isDragonUnlocked() && !data.kills['enderdragon']) {
-    showDragonNotification();
+    /* Route based on current hash */
+    handleRoute();
+
+    /* Show dragon notification on load if already unlocked and never fought */
+    if (isDragonUnlocked() && !data.kills['enderdragon']) {
+      showDragonNotification();
+    }
   }
+  /* Otherwise the intro screen is already visible — wait for user to
+     choose storage and click Enter. */
 }
 
 init();
