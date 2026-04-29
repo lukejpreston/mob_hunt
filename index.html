@@ -690,7 +690,7 @@
 
   <!-- ===== MOB SELECT ===== -->
   <div id="select-screen" class="screen">
-    <div class="score-display">Total Score: <span id="select-total-score">0</span></div>
+    <div class="score-display">Total Score: <span id="select-total-score">0</span><span id="skull-display-select" class="skull-display" style="display:none;"><svg class="skull-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="8" fill="#333"/><rect x="5" y="10" width="6" height="3" fill="#222"/><rect x="5" y="4" width="2" height="2" fill="#555"/><rect x="9" y="4" width="2" height="2" fill="#555"/><rect x="6" y="8" width="1" height="2" fill="#555"/><rect x="9" y="8" width="1" height="2" fill="#555"/></svg> <span id="skull-count-select">0</span>/3</span></div>
     <button class="btn-hunt" onclick="openScanner()" style="margin-bottom: 1rem;">
       <svg class="sword-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="28" width="4" height="4" fill="#8B4513"/>
@@ -827,6 +827,7 @@
 
   <!-- ===== QR SCANNER ===== -->
   <div id="scanner-screen" class="screen">
+    <div class="score-display">Total Score: <span id="scanner-total-score">0</span><span id="skull-display-scanner" class="skull-display" style="display:none;"><svg class="skull-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="8" fill="#333"/><rect x="5" y="10" width="6" height="3" fill="#222"/><rect x="5" y="4" width="2" height="2" fill="#555"/><rect x="9" y="4" width="2" height="2" fill="#555"/><rect x="6" y="8" width="1" height="2" fill="#555"/><rect x="9" y="8" width="1" height="2" fill="#555"/></svg> <span id="skull-count-scanner">0</span>/3</span></div>
     <h2>Scan a Mob QR Code</h2>
     <p class="scanner-hint">Point your camera at a Mob Hunt QR code</p>
     <div id="scanner-reader"></div>
@@ -2187,20 +2188,27 @@ function isWardenUnlocked() {
 
 function checkWardenEvent() {
   const data = getPlayerData();
+  console.log('checkWardenEvent: wardenUnlocked =', data.wardenUnlocked, 'totalKills =', Object.values(data.kills || {}).reduce((a, b) => a + b, 0), 'wardenChance =', data.wardenChance || 0);
   if (data.wardenUnlocked) return false;
   const totalKills = Object.values(data.kills || {}).reduce((a, b) => a + b, 0);
-  if (totalKills < 3) return false;
+  if (totalKills < 3) {
+    console.log('checkWardenEvent: not enough kills yet (need 3, have', totalKills, ')');
+    return false;
+  }
   /* wardenChance starts at 1 and increments each kill after the 3rd */
   if (!data.wardenChance) data.wardenChance = 0;
   data.wardenChance = Math.min((data.wardenChance || 0) + 1, 10);
   savePlayerData(data);
   /* Roll: chance is wardenChance out of 10 */
   const roll = Math.random() * 10;
+  console.log('checkWardenEvent: roll =', roll.toFixed(2), 'wardenChance =', data.wardenChance, '(triggers if roll <', data.wardenChance, ')');
   if (roll < data.wardenChance) {
+    console.log('checkWardenEvent: WARDEN TRIGGERED!');
     data.wardenUnlocked = true;
     savePlayerData(data);
     return true;
   }
+  console.log('checkWardenEvent: no trigger this time');
   return false;
 }
 
@@ -2268,14 +2276,25 @@ function addWitherSkull() {
 
 function updateSkullDisplay() {
   const skulls = getWitherSkulls();
-  const homeDisplay = document.getElementById('skull-display-home');
-  const homeCount = document.getElementById('skull-count-home');
-  if (skulls >= 1) {
-    homeDisplay.style.display = '';
-    homeCount.textContent = skulls;
-  } else {
-    homeDisplay.style.display = 'none';
-  }
+  const data = getPlayerData();
+  const witherSkeletonKills = (data.kills && data.kills['wither_skeleton']) || 0;
+  const show = witherSkeletonKills >= 1;
+
+  const displays = [
+    { display: document.getElementById('skull-display-home'), count: document.getElementById('skull-count-home') },
+    { display: document.getElementById('skull-display-select'), count: document.getElementById('skull-count-select') },
+    { display: document.getElementById('skull-display-scanner'), count: document.getElementById('skull-count-scanner') },
+  ];
+
+  displays.forEach(({ display, count }) => {
+    if (!display || !count) return;
+    if (show) {
+      display.style.display = '';
+      count.textContent = skulls;
+    } else {
+      display.style.display = 'none';
+    }
+  });
 }
 
 function showWitherNotification() {
@@ -2337,9 +2356,16 @@ function showDragonNotification() {
   btn.textContent = 'Accept the Challenge';
   btn.onclick = () => {
     overlay.remove();
-    navigateTo('list');
+    navigateTo('enderdragon/hunt');
   };
   overlay.appendChild(btn);
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'btn btn-small';
+  dismissBtn.textContent = 'Not Right Now';
+  dismissBtn.style.marginTop = '0.5rem';
+  dismissBtn.onclick = () => overlay.remove();
+  overlay.appendChild(dismissBtn);
 
   document.body.appendChild(overlay);
 
@@ -2384,7 +2410,13 @@ function showScreen(id) {
   if (id === 'select-screen') {
     const selData = getPlayerData();
     document.getElementById('select-total-score').textContent = selData.totalScore;
+    updateSkullDisplay();
     renderMobGrid();
+  }
+  if (id === 'scanner-screen') {
+    const scanData = getPlayerData();
+    document.getElementById('scanner-total-score').textContent = scanData.totalScore;
+    updateSkullDisplay();
   }
 }
 
