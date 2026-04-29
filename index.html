@@ -662,7 +662,31 @@
     <canvas class="victory-mob" id="victory-mob-canvas" width="96" height="96"></canvas>
     <div class="victory-points" id="victory-points">+0</div>
     <div class="victory-label">points earned</div>
-    <button class="btn" onclick="navigateTo('list')">Hunt Again</button>
+    <button class="btn-hunt" onclick="openScanner()">
+      <svg class="sword-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="28" width="4" height="4" fill="#8B4513"/>
+        <rect x="4" y="26" width="4" height="4" fill="#8B4513"/>
+        <rect x="6" y="24" width="2" height="2" fill="#A0522D"/>
+        <rect x="8" y="22" width="2" height="2" fill="#A0522D"/>
+        <rect x="4" y="22" width="2" height="2" fill="#FFD700"/>
+        <rect x="6" y="20" width="2" height="2" fill="#FFD700"/>
+        <rect x="8" y="24" width="2" height="2" fill="#FFD700"/>
+        <rect x="10" y="22" width="2" height="2" fill="#FFD700"/>
+        <rect x="10" y="20" width="2" height="2" fill="#4FC3F7"/>
+        <rect x="12" y="18" width="2" height="2" fill="#4FC3F7"/>
+        <rect x="14" y="16" width="2" height="2" fill="#4FC3F7"/>
+        <rect x="16" y="14" width="2" height="2" fill="#4FC3F7"/>
+        <rect x="18" y="12" width="2" height="2" fill="#4FC3F7"/>
+        <rect x="20" y="10" width="2" height="2" fill="#29B6F6"/>
+        <rect x="22" y="8" width="2" height="2" fill="#29B6F6"/>
+        <rect x="24" y="6" width="2" height="2" fill="#29B6F6"/>
+        <rect x="26" y="4" width="2" height="2" fill="#29B6F6"/>
+        <rect x="28" y="2" width="2" height="2" fill="#81D4FA"/>
+        <rect x="26" y="2" width="2" height="2" fill="#81D4FA"/>
+        <rect x="28" y="4" width="2" height="2" fill="#81D4FA"/>
+      </svg>
+      Hunt Again
+    </button>
     <button class="btn" onclick="navigateTo('')">Home</button>
   </div>
 
@@ -681,7 +705,7 @@
     <h2>Scan a Mob QR Code</h2>
     <p class="scanner-hint">Point your camera at a Mob Hunt QR code</p>
     <div id="scanner-reader"></div>
-    <button class="btn btn-small" onclick="navigateTo('')">Cancel</button>
+    <button class="btn btn-small" onclick="cancelScan()">Cancel</button>
   </div>
 
 <script>
@@ -1575,6 +1599,7 @@ function showScreen(id) {
 
 function handleRoute() {
   const hash = window.location.hash.replace(/^#/, '');
+  console.log('handleRoute: hash =', hash);
 
   /* Stop scanner if navigating away from it */
   stopScanner();
@@ -2251,8 +2276,16 @@ function closeScanner() {
   navigateTo('');
 }
 
+function cancelScan() {
+  stopScanner();
+  navigateTo('');
+}
+
+let scanPollInterval = null;
+
 function startScanner() {
   stopScanner();
+  pendingScanMob = null;
   html5QrScanner = new Html5Qrcode('scanner-reader');
   html5QrScanner.start(
     { facingMode: 'environment' },
@@ -2264,25 +2297,51 @@ function startScanner() {
     document.querySelector('.scanner-hint').textContent =
       'Camera not available. Check permissions and try again.';
   });
+
+  /* Poll for a successful scan outside the scanner callback context */
+  if (scanPollInterval) clearInterval(scanPollInterval);
+  scanPollInterval = setInterval(() => {
+    if (pendingScanMob) {
+      const mobKey = pendingScanMob;
+      pendingScanMob = null;
+      clearInterval(scanPollInterval);
+      scanPollInterval = null;
+      console.log('scanPoll: detected mob', mobKey, '- stopping scanner');
+      stopScanner();
+      console.log('scanPoll: navigating to', `${mobKey}/hunt`);
+      setTimeout(() => {
+        console.log('scanPoll: executing navigation now');
+        navigateTo(`${mobKey}/hunt`);
+      }, 500);
+    }
+  }, 200);
 }
 
 function stopScanner() {
   if (html5QrScanner) {
-    html5QrScanner.stop().catch(() => {});
-    html5QrScanner.clear();
+    const scanner = html5QrScanner;
     html5QrScanner = null;
+    scanner.stop().then(() => {
+      scanner.clear();
+    }).catch(() => {});
   }
 }
 
+let pendingScanMob = null;
+
 function onScanSuccess(decodedText) {
+  if (pendingScanMob) return;
+  console.log('onScanSuccess: decodedText =', decodedText);
   /* Extract mob key from scanned URL (e.g. ...#zombie/hunt) */
   let mobKey = null;
   try {
     const url = new URL(decodedText);
+    console.log('onScanSuccess: parsed URL =', url.href, 'hash =', url.hash);
     /* Try hash-based format first: #mob_name/hunt or #mob_name */
     const hash = url.hash.replace(/^#/, '');
     if (hash) {
       const parts = hash.split('/');
+      console.log('onScanSuccess: hash parts =', parts);
       if (parts[0] && MOBS[parts[0]]) {
         mobKey = parts[0];
       }
@@ -2291,19 +2350,25 @@ function onScanSuccess(decodedText) {
     if (!mobKey) {
       mobKey = url.searchParams.get('mob');
     }
-  } catch {
+  } catch (e) {
     /* Not a valid URL - ignore */
+    console.log('onScanSuccess: URL parse error =', e.message);
     return;
   }
+
+  console.log('onScanSuccess: mobKey =', mobKey, 'valid =', !!(mobKey && MOBS[mobKey]));
 
   if (!mobKey || !MOBS[mobKey]) return;
 
   /* Block dragon if points threshold not met */
-  if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
+  if (MOBS[mobKey].locked && !isDragonUnlocked()) {
+    console.log('onScanSuccess: dragon locked, aborting');
+    return;
+  }
 
-  /* Stop the scanner and navigate to hunt */
-  stopScanner();
-  navigateTo(`${mobKey}/hunt`);
+  /* Store the mob key and let stopScanner + navigate happen outside the callback */
+  console.log('onScanSuccess: found mob', mobKey);
+  pendingScanMob = mobKey;
 }
 
 /* Scanner is stopped by the router (handleRoute) when navigating away */
