@@ -528,6 +528,43 @@
     #scanner-reader img[alt="Info"] { display: none !important; }
     #scanner-reader > div:last-child { display: none !important; }
 
+    /* ===== ESCAPE BUTTON ===== */
+    .btn-escape {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 2px solid #e94560;
+      background: transparent;
+      color: #e94560;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      z-index: 20;
+    }
+    .btn-escape:hover, .btn-escape:active {
+      background: #e94560;
+      color: #fff;
+    }
+    .btn-escape:hover .boot-icon, .btn-escape:active .boot-icon {
+      filter: brightness(0) invert(1);
+    }
+    .boot-icon {
+      width: 24px;
+      height: 24px;
+      transition: filter 0.2s;
+    }
+    #game-screen .btn-escape {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
     /* ===== PRINT MEDIA ===== */
     @media print {
       html, body {
@@ -639,7 +676,24 @@
     <p class="qr-info">Scan this QR code to start the hunt! Or tap the button below to fight now.</p>
     <button class="btn" id="qr-fight-btn">Fight Now!</button>
     <br>
-    <button class="btn btn-small" onclick="navigateTo('list')">Back</button>
+    <button class="btn-escape" onclick="navigateTo('')">
+      <svg class="boot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Minecraft boot pixel art -->
+        <rect x="6" y="2" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="4" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="6" width="4" height="2" fill="#A0522D"/>
+        <rect x="6" y="8" width="4" height="2" fill="#A0522D"/>
+        <rect x="6" y="10" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="12" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="14" width="4" height="2" fill="#6B3410"/>
+        <rect x="4" y="16" width="6" height="2" fill="#6B3410"/>
+        <rect x="2" y="18" width="10" height="2" fill="#4A2400"/>
+        <rect x="2" y="20" width="12" height="2" fill="#3B1C00"/>
+        <rect x="12" y="18" width="2" height="2" fill="#4A2400"/>
+        <rect x="10" y="16" width="4" height="2" fill="#6B3410"/>
+      </svg>
+      Escape
+    </button>
   </div>
 
   <!-- ===== GAME ===== -->
@@ -654,6 +708,24 @@
     <div class="mob-area" id="mob-area">
       <canvas class="mob-sprite" id="mob-canvas" width="128" height="128"></canvas>
     </div>
+    <button class="btn-escape" onclick="navigateTo('')">
+      <svg class="boot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Minecraft boot pixel art -->
+        <rect x="6" y="2" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="4" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="6" width="4" height="2" fill="#A0522D"/>
+        <rect x="6" y="8" width="4" height="2" fill="#A0522D"/>
+        <rect x="6" y="10" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="12" width="4" height="2" fill="#8B4513"/>
+        <rect x="6" y="14" width="4" height="2" fill="#6B3410"/>
+        <rect x="4" y="16" width="6" height="2" fill="#6B3410"/>
+        <rect x="2" y="18" width="10" height="2" fill="#4A2400"/>
+        <rect x="2" y="20" width="12" height="2" fill="#3B1C00"/>
+        <rect x="12" y="18" width="2" height="2" fill="#4A2400"/>
+        <rect x="10" y="16" width="4" height="2" fill="#6B3410"/>
+      </svg>
+      Escape
+    </button>
   </div>
 
   <!-- ===== VICTORY ===== -->
@@ -1585,6 +1657,8 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   if (id !== 'game-screen') {
     stopAmbientSound();
+    if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+    isGameActive = false;
   }
   if (id === 'home-screen') {
     const data = getPlayerData();
