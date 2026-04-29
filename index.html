@@ -638,6 +638,45 @@
       flex-shrink: 0;
     }
 
+    /* ===== SOUND TOGGLE BUTTON ===== */
+    .sound-toggle {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.8rem;
+      font-family: 'Courier New', monospace;
+      border: 2px solid #e94560;
+      background: rgba(26, 26, 46, 0.85);
+      color: #e94560;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .sound-toggle:hover, .sound-toggle:active {
+      background: #e94560;
+      color: #fff;
+    }
+    .sound-toggle:hover svg, .sound-toggle:active svg {
+      fill: #fff;
+    }
+    .sound-toggle svg {
+      width: 22px;
+      height: 22px;
+      fill: #e94560;
+      transition: fill 0.2s;
+      flex-shrink: 0;
+    }
+    @media print {
+      .sound-toggle { display: none !important; }
+    }
+
     /* ===== PRINT MEDIA ===== */
     @media print {
       html, body {
@@ -672,6 +711,20 @@
   </style>
 </head>
 <body>
+
+  <!-- ===== SOUND TOGGLE (fixed, all pages) ===== -->
+  <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" aria-label="Toggle sound">
+    <!-- Headset ON icon (shown when sound is on) -->
+    <svg id="sound-icon-on" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+      <path d="M12 1C7 1 3 5 3 10v2c0 .55-.45 1-1 1s-1 .45-1 1v2c0 .55.45 1 1 1s1 .45 1 1c0 1.66 1.34 3 3 3h2c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1H6v-3c0-3.31 2.69-6 6-6s6 2.69 6 6v3h-2c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h2c1.66 0 3-1.34 3-3 0-.55.45-1 1-1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1-.45-1-1v-2c0-5-4-9-9-9z"/>
+    </svg>
+    <!-- Headset OFF icon (shown when sound is off) -->
+    <svg id="sound-icon-off" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+      <path d="M12 1C7 1 3 5 3 10v2c0 .55-.45 1-1 1s-1 .45-1 1v2c0 .55.45 1 1 1s1 .45 1 1c0 1.66 1.34 3 3 3h2c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1H6v-3c0-3.31 2.69-6 6-6s6 2.69 6 6v3h-2c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h2c1.66 0 3-1.34 3-3 0-.55.45-1 1-1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1-.45-1-1v-2c0-5-4-9-9-9z"/>
+      <line x1="3" y1="3" x2="21" y2="21" stroke="#e94560" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <span id="sound-toggle-text">sound off</span>
+  </button>
 
   <!-- ===== HOME ===== -->
   <div id="home-screen" class="screen active">
@@ -1190,21 +1243,226 @@ const MOBS = {
    SOUND ENGINE (Web Audio API - Minecraft-style synthesis)
    ================================================================ */
 let audioCtx = null;
+let masterGain = null;
+let soundEnabled = false;
 
 function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.connect(audioCtx.destination);
+    /* Apply saved preference */
+    const saved = localStorage.getItem('mobhunt_sound');
+    soundEnabled = saved === 'on';
+    masterGain.gain.value = soundEnabled ? 1 : 0;
+    updateSoundToggleUI();
+  }
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
+}
+
+/* Master output node: all sounds connect here instead of ctx.destination */
+function getMasterOutput() {
+  ensureAudio();
+  return masterGain;
 }
 
 /* Eagerly unlock AudioContext on any user interaction */
 function unlockAudio() {
   ensureAudio();
+  /* Start background music on first interaction if sound is enabled */
+  if (soundEnabled) startBgMusic();
   document.removeEventListener('click', unlockAudio);
   document.removeEventListener('touchstart', unlockAudio);
 }
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
+
+/* ===== SOUND TOGGLE ===== */
+function toggleSound() {
+  ensureAudio();
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('mobhunt_sound', soundEnabled ? 'on' : 'off');
+  masterGain.gain.setTargetAtTime(soundEnabled ? 1 : 0, audioCtx.currentTime, 0.05);
+  updateSoundToggleUI();
+  if (soundEnabled) {
+    startBgMusic();
+  } else {
+    stopBgMusic();
+  }
+}
+
+function updateSoundToggleUI() {
+  const iconOn = document.getElementById('sound-icon-on');
+  const iconOff = document.getElementById('sound-icon-off');
+  const text = document.getElementById('sound-toggle-text');
+  if (soundEnabled) {
+    iconOn.style.display = '';
+    iconOff.style.display = 'none';
+    text.textContent = 'sound on';
+  } else {
+    iconOn.style.display = 'none';
+    iconOff.style.display = '';
+    text.textContent = 'sound off';
+  }
+}
+
+/* Init toggle UI on load */
+updateSoundToggleUI();
+
+/* ===== BACKGROUND MUSIC (Minecraft-style C418 calm loop) ===== */
+let bgMusicNodes = null;
+let bgMusicTimeout = null;
+
+function startBgMusic() {
+  if (bgMusicNodes) return; /* already playing */
+  const ctx = ensureAudio();
+  playBgMusicLoop(ctx);
+}
+
+function stopBgMusic() {
+  if (bgMusicTimeout) { clearTimeout(bgMusicTimeout); bgMusicTimeout = null; }
+  if (bgMusicNodes) {
+    bgMusicNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+    bgMusicNodes = null;
+  }
+}
+
+function playBgMusicLoop(ctx) {
+  if (!soundEnabled) { bgMusicNodes = null; return; }
+
+  const t = ctx.currentTime;
+  const nodes = [];
+  const out = getMasterOutput();
+
+  /* Minecraft-style calm melody using pentatonic scale */
+  /* Notes: C4=262, D4=294, E4=330, G4=392, A4=440, C5=523, D5=587, E5=659 */
+  const melody = [
+    /* bar 1 */
+    { freq: 523, start: 0,    dur: 0.8 },
+    { freq: 440, start: 0.9,  dur: 0.6 },
+    { freq: 392, start: 1.6,  dur: 0.8 },
+    { freq: 330, start: 2.5,  dur: 0.6 },
+    /* bar 2 */
+    { freq: 392, start: 3.2,  dur: 0.8 },
+    { freq: 440, start: 4.1,  dur: 0.6 },
+    { freq: 523, start: 4.8,  dur: 1.0 },
+    { freq: 659, start: 5.9,  dur: 0.6 },
+    /* bar 3 */
+    { freq: 587, start: 6.6,  dur: 0.8 },
+    { freq: 523, start: 7.5,  dur: 0.6 },
+    { freq: 440, start: 8.2,  dur: 0.8 },
+    { freq: 392, start: 9.1,  dur: 0.6 },
+    /* bar 4 */
+    { freq: 330, start: 9.8,  dur: 0.8 },
+    { freq: 294, start: 10.7, dur: 0.6 },
+    { freq: 330, start: 11.4, dur: 0.8 },
+    { freq: 392, start: 12.3, dur: 0.8 },
+    /* bar 5 - resolve */
+    { freq: 440, start: 13.2, dur: 0.8 },
+    { freq: 523, start: 14.1, dur: 1.2 },
+    { freq: 440, start: 15.4, dur: 0.6 },
+    { freq: 392, start: 16.1, dur: 1.0 },
+    /* bar 6 */
+    { freq: 330, start: 17.2, dur: 0.8 },
+    { freq: 262, start: 18.1, dur: 0.6 },
+    { freq: 294, start: 18.8, dur: 0.8 },
+    { freq: 330, start: 19.7, dur: 0.8 },
+    /* bar 7 */
+    { freq: 392, start: 20.6, dur: 0.6 },
+    { freq: 440, start: 21.3, dur: 0.8 },
+    { freq: 523, start: 22.2, dur: 0.8 },
+    { freq: 587, start: 23.1, dur: 0.6 },
+    /* bar 8 - gentle ending */
+    { freq: 523, start: 23.8, dur: 1.0 },
+    { freq: 440, start: 24.9, dur: 0.8 },
+    { freq: 392, start: 25.8, dur: 1.0 },
+    { freq: 330, start: 26.9, dur: 1.5 },
+  ];
+
+  const loopDuration = 29.5; /* seconds before next loop starts */
+
+  /* Soft pad / chord bed underneath */
+  const padChords = [
+    { freqs: [262, 330, 392], start: 0,    dur: 6.4 },
+    { freqs: [294, 392, 523], start: 6.6,  dur: 6.2 },
+    { freqs: [262, 330, 440], start: 13.2, dur: 6.6 },
+    { freqs: [247, 294, 392], start: 20.6, dur: 8.0 },
+  ];
+
+  /* Play melody notes - soft sine/triangle piano-like */
+  melody.forEach(note => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = note.freq;
+
+    /* Second osc slightly detuned for warmth */
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.value = note.freq * 1.002;
+
+    const gain = ctx.createGain();
+    const noteStart = t + note.start;
+    gain.gain.setValueAtTime(0, noteStart);
+    gain.gain.linearRampToValueAtTime(0.07, noteStart + 0.04);
+    gain.gain.setValueAtTime(0.07, noteStart + note.dur * 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.001, noteStart + note.dur);
+
+    const gain2 = ctx.createGain();
+    gain2.gain.setValueAtTime(0, noteStart);
+    gain2.gain.linearRampToValueAtTime(0.03, noteStart + 0.04);
+    gain2.gain.setValueAtTime(0.03, noteStart + note.dur * 0.5);
+    gain2.gain.exponentialRampToValueAtTime(0.001, noteStart + note.dur);
+
+    /* Gentle reverb-like filter */
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+
+    osc.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(out);
+    osc2.connect(gain2);
+    gain2.connect(out);
+
+    osc.start(noteStart);
+    osc.stop(noteStart + note.dur + 0.1);
+    osc2.start(noteStart);
+    osc2.stop(noteStart + note.dur + 0.1);
+    nodes.push(osc, osc2);
+  });
+
+  /* Play pad chords - very soft, slow attack */
+  padChords.forEach(chord => {
+    chord.freqs.forEach(freq => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * 0.5; /* one octave lower */
+
+      const gain = ctx.createGain();
+      const chordStart = t + chord.start;
+      gain.gain.setValueAtTime(0, chordStart);
+      gain.gain.linearRampToValueAtTime(0.025, chordStart + 0.5);
+      gain.gain.setValueAtTime(0.025, chordStart + chord.dur - 0.8);
+      gain.gain.linearRampToValueAtTime(0, chordStart + chord.dur);
+
+      osc.connect(gain);
+      gain.connect(out);
+      osc.start(chordStart);
+      osc.stop(chordStart + chord.dur + 0.1);
+      nodes.push(osc);
+    });
+  });
+
+  bgMusicNodes = nodes;
+
+  /* Schedule next loop */
+  bgMusicTimeout = setTimeout(() => {
+    bgMusicNodes = null;
+    playBgMusicLoop(ctx);
+  }, loopDuration * 1000);
+}
 
 /* --- Utility: noise buffer --- */
 function createNoiseBuffer(ctx, duration) {
@@ -1237,7 +1495,7 @@ function playPunch() {
 
   noise.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
+  noiseGain.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.1);
 
@@ -1252,7 +1510,7 @@ function playPunch() {
   oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
 
   osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
+  oscGain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.1);
 }
@@ -1293,7 +1551,7 @@ function playZombieHurt() {
 
   osc.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.4);
 }
@@ -1321,7 +1579,7 @@ function playSkeletonHurt() {
 
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getMasterOutput());
     noise.start(t + offset);
     noise.stop(t + offset + 0.03);
   }
@@ -1337,7 +1595,7 @@ function playSkeletonHurt() {
   oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
 
   osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
+  oscGain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.2);
 }
@@ -1366,7 +1624,7 @@ function playCreeperHurt() {
 
   noise.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.4);
 
@@ -1381,7 +1639,7 @@ function playCreeperHurt() {
   oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
 
   osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
+  oscGain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.35);
 }
@@ -1409,7 +1667,7 @@ function playSpiderHurt() {
 
   osc.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.3);
 
@@ -1427,7 +1685,7 @@ function playSpiderHurt() {
 
   noise.connect(nf);
   nf.connect(ng);
-  ng.connect(ctx.destination);
+  ng.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.25);
 }
@@ -1450,7 +1708,7 @@ function playEndermanHurt() {
     gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.06);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getMasterOutput());
     osc.start(t + i * 0.06);
     osc.stop(t + i * 0.06 + 0.07);
   }
@@ -1472,7 +1730,7 @@ function playEndermanHurt() {
 
   noise.connect(nf);
   nf.connect(ng);
-  ng.connect(ctx.destination);
+  ng.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.35);
 
@@ -1487,7 +1745,7 @@ function playEndermanHurt() {
   g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
 
   osc2.connect(g2);
-  g2.connect(ctx.destination);
+  g2.connect(getMasterOutput());
   osc2.start(t);
   osc2.stop(t + 0.3);
 }
@@ -1518,7 +1776,7 @@ function playWitchHurt() {
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getMasterOutput());
     osc.start(t);
     osc.stop(t + 0.35);
   });
@@ -1562,7 +1820,7 @@ function playEnderdragonHurt() {
   osc.connect(distortion);
   distortion.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(getMasterOutput());
   osc.start(t);
   osc.stop(t + 0.55);
 
@@ -1577,7 +1835,7 @@ function playEnderdragonHurt() {
   g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
 
   osc2.connect(g2);
-  g2.connect(ctx.destination);
+  g2.connect(getMasterOutput());
   osc2.start(t);
   osc2.stop(t + 0.4);
 
@@ -1595,7 +1853,7 @@ function playEnderdragonHurt() {
 
   noise.connect(nf);
   nf.connect(ng);
-  ng.connect(ctx.destination);
+  ng.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.35);
 }
@@ -1651,7 +1909,7 @@ function playAmbientOnce(mobKey) {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(getMasterOutput());
       osc.start(t);
       osc.stop(t + 0.9);
       break;
@@ -1673,7 +1931,7 @@ function playAmbientOnce(mobKey) {
 
         noise.connect(filt);
         filt.connect(g);
-        g.connect(ctx.destination);
+        g.connect(getMasterOutput());
         noise.start(t + off);
         noise.stop(t + off + 0.03);
       }
@@ -1696,7 +1954,7 @@ function playAmbientOnce(mobKey) {
 
       noise.connect(filt);
       filt.connect(g);
-      g.connect(ctx.destination);
+      g.connect(getMasterOutput());
       noise.start(t);
       noise.stop(t + 0.6);
       break;
@@ -1714,7 +1972,7 @@ function playAmbientOnce(mobKey) {
         g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.02);
 
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(getMasterOutput());
         osc.start(t + off);
         osc.stop(t + off + 0.03);
       }
@@ -1741,7 +1999,7 @@ function playAmbientOnce(mobKey) {
 
       osc.connect(filter);
       filter.connect(g);
-      g.connect(ctx.destination);
+      g.connect(getMasterOutput());
       osc.start(t);
       osc.stop(t + 0.55);
       break;
@@ -1761,7 +2019,7 @@ function playAmbientOnce(mobKey) {
         g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.08);
 
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(getMasterOutput());
         osc.start(t + off);
         osc.stop(t + off + 0.1);
       }
@@ -1789,7 +2047,7 @@ function playAmbientOnce(mobKey) {
 
       osc.connect(filter);
       filter.connect(g);
-      g.connect(ctx.destination);
+      g.connect(getMasterOutput());
       osc.start(t);
       osc.stop(t + 1.1);
 
@@ -1811,7 +2069,7 @@ function playAmbientOnce(mobKey) {
 
       noise.connect(nf);
       nf.connect(ng);
-      ng.connect(ctx.destination);
+      ng.connect(getMasterOutput());
       noise.start(t + 0.2);
       noise.stop(t + 0.7);
       break;
@@ -1825,7 +2083,7 @@ function playAmbientOnce(mobKey) {
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.04, t + 0.05);
       g.gain.setValueAtTime(0.04, t + 0.2); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      noise.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      noise.connect(filt); filt.connect(g); g.connect(getMasterOutput());
       noise.start(t); noise.stop(t + 0.4);
       break;
     }
@@ -1839,7 +2097,7 @@ function playAmbientOnce(mobKey) {
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.1);
       g.gain.setValueAtTime(0.05, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.65);
+      osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.65);
       break;
     }
     case 'slime':
@@ -1851,7 +2109,7 @@ function playAmbientOnce(mobKey) {
       osc.frequency.exponentialRampToValueAtTime(80, t + 0.1);
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.15);
+      osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.15);
       break;
     }
     case 'warden': {
@@ -1864,7 +2122,7 @@ function playAmbientOnce(mobKey) {
         g.gain.setValueAtTime(0.001, t + off);
         g.gain.linearRampToValueAtTime(0.08, t + off + 0.05);
         g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.2);
-        osc.connect(g); g.connect(ctx.destination);
+        osc.connect(g); g.connect(getMasterOutput());
         osc.start(t + off); osc.stop(t + off + 0.25);
       }
       break;
@@ -1879,7 +2137,7 @@ function playAmbientOnce(mobKey) {
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.1);
       g.gain.setValueAtTime(0.06, t + 0.4); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-      osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      osc.connect(filt); filt.connect(g); g.connect(getMasterOutput());
       osc.start(t); osc.stop(t + 0.65);
       break;
     }
@@ -1891,7 +2149,7 @@ function playAmbientOnce(mobKey) {
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(0.04, t + 0.1);
       g.gain.setValueAtTime(0.04, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-      osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.55);
+      osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.55);
       break;
     }
   }
@@ -1917,7 +2175,7 @@ function playDeathSound() {
 
   noise.connect(nf);
   nf.connect(ng);
-  ng.connect(ctx.destination);
+  ng.connect(getMasterOutput());
   noise.start(t);
   noise.stop(t + 0.25);
 
@@ -1934,7 +2192,7 @@ function playDeathSound() {
     g.gain.exponentialRampToValueAtTime(0.001, t + chimeDelay + i * 0.08 + 0.2);
 
     osc.connect(g);
-    g.connect(ctx.destination);
+    g.connect(getMasterOutput());
     osc.start(t + chimeDelay + i * 0.08);
     osc.stop(t + chimeDelay + i * 0.08 + 0.25);
   });
@@ -1952,7 +2210,7 @@ function playGenericHurt() {
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.25, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-  osc.connect(g); g.connect(ctx.destination);
+  osc.connect(g); g.connect(getMasterOutput());
   osc.start(t); osc.stop(t + 0.3);
 }
 
@@ -1969,13 +2227,13 @@ function playBlazeHurt() {
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.2, t + off);
     g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.05);
-    noise.connect(f); f.connect(g); g.connect(ctx.destination);
+    noise.connect(f); f.connect(g); g.connect(getMasterOutput());
     noise.start(t + off); noise.stop(t + off + 0.06);
   }
   const osc = ctx.createOscillator();
   osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(80, t + 0.2);
   const og = ctx.createGain(); og.gain.setValueAtTime(0.15, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.connect(og); og.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+  osc.connect(og); og.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.25);
 }
 
 /* --- GHAST HURT: high wail --- */
@@ -1989,7 +2247,7 @@ function playGhastHurt() {
   osc.frequency.linearRampToValueAtTime(600, t + 0.3);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.4);
+  osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.4);
 }
 
 /* --- SLIME HURT: squishy squelch --- */
@@ -2002,12 +2260,12 @@ function playSlimeHurt() {
   osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+  osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.25);
   const noise = ctx.createBufferSource();
   noise.buffer = createNoiseBuffer(ctx, 0.1);
   const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 800;
   const ng = ctx.createGain(); ng.gain.setValueAtTime(0.15, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.15);
+  noise.connect(nf); nf.connect(ng); ng.connect(getMasterOutput()); noise.start(t); noise.stop(t + 0.15);
 }
 
 /* --- WARDEN HURT: deep rumble with vibration --- */
@@ -2024,12 +2282,12 @@ function playWardenHurt() {
   dist.curve = curve;
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-  osc.connect(dist); dist.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.55);
+  osc.connect(dist); dist.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.55);
   const noise = ctx.createBufferSource();
   noise.buffer = createNoiseBuffer(ctx, 0.3);
   const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 200;
   const ng = ctx.createGain(); ng.gain.setValueAtTime(0.2, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.35);
+  noise.connect(nf); nf.connect(ng); ng.connect(getMasterOutput()); noise.start(t); noise.stop(t + 0.35);
 }
 
 /* --- WITHER HURT: multi-tone screech --- */
@@ -2044,13 +2302,13 @@ function playWitherHurt() {
     osc.frequency.exponentialRampToValueAtTime(freq * 0.3, t + 0.3);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-    osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.35);
+    osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.35);
   }
   const noise = ctx.createBufferSource();
   noise.buffer = createNoiseBuffer(ctx, 0.25);
   const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1000; nf.Q.value = 2;
   const ng = ctx.createGain(); ng.gain.setValueAtTime(0.2, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination); noise.start(t); noise.stop(t + 0.3);
+  noise.connect(nf); nf.connect(ng); ng.connect(getMasterOutput()); noise.start(t); noise.stop(t + 0.3);
 }
 
 /* --- PHANTOM HURT: swooshy screech --- */
@@ -2063,7 +2321,7 @@ function playPhantomHurt() {
   osc.frequency.exponentialRampToValueAtTime(300, t + 0.2);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
+  osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.3);
 }
 
 /* --- GUARDIAN HURT: laser zap --- */
@@ -2076,7 +2334,7 @@ function playGuardianHurt() {
   osc.frequency.exponentialRampToValueAtTime(400, t + 0.15);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.25);
+  osc.connect(g); g.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.25);
 }
 
 /* --- SHULKER HURT: shell clack --- */
@@ -2088,11 +2346,11 @@ function playShulkerHurt() {
   const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000; f.Q.value = 10;
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-  noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(t); noise.stop(t + 0.06);
+  noise.connect(f); f.connect(g); g.connect(getMasterOutput()); noise.start(t); noise.stop(t + 0.06);
   const osc = ctx.createOscillator();
   osc.type = 'triangle'; osc.frequency.setValueAtTime(600, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
   const og = ctx.createGain(); og.gain.setValueAtTime(0.15, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-  osc.connect(og); og.connect(ctx.destination); osc.start(t); osc.stop(t + 0.15);
+  osc.connect(og); og.connect(getMasterOutput()); osc.start(t); osc.stop(t + 0.15);
 }
 
 /* --- Map mob keys to their hurt sound functions --- */
