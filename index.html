@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mob Hunt</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%; height: 100%;
+      position: absolute; top: 0; left: 0;
+    }
+    .screen.active { display: flex; }
+
+    /* ===== HOME SCREEN ===== */
+    #home-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+    #home-screen h1 {
+      font-size: 3rem;
+      text-shadow: 0 0 20px #e94560, 0 0 40px #e94560;
+      color: #e94560;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.2em;
+    }
+    #home-screen .subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    .score-display {
+      font-size: 1.4rem;
+      color: #ffd700;
+      margin-bottom: 1.5rem;
+    }
+    .score-display span { font-weight: bold; }
+    .btn {
+      padding: 0.8rem 2rem;
+      font-size: 1.1rem;
+      font-family: inherit;
+      border: 2px solid #e94560;
+      background: transparent;
+      color: #e94560;
+      cursor: pointer;
+      margin: 0.4rem;
+      transition: all 0.2s;
+      letter-spacing: 0.1em;
+    }
+    .btn:hover, .btn:active {
+      background: #e94560;
+      color: #fff;
+    }
+    .btn-small {
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    /* ===== MOB SELECT ===== */
+    #select-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding: 1.5rem;
+    }
+    #select-screen h2 {
+      font-size: 1.8rem;
+      color: #e94560;
+      margin-bottom: 1rem;
+    }
+    .mob-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      width: 100%;
+      max-width: 600px;
+    }
+    .mob-card {
+      background: #16213e;
+      border: 2px solid #333;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mob-card:hover, .mob-card:active {
+      border-color: #e94560;
+      transform: scale(1.05);
+    }
+    .mob-card .mob-preview {
+      width: 64px; height: 64px;
+      margin: 0 auto 0.5rem;
+      image-rendering: pixelated;
+    }
+    .mob-card .mob-name {
+      font-size: 0.9rem;
+      color: #e94560;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .mob-card .mob-info {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 0.25rem;
+    }
+
+    /* ===== QR SCREEN ===== */
+    #qr-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      padding: 1.5rem;
+    }
+    #qr-screen h2 {
+      font-size: 1.4rem;
+      color: #e94560;
+      margin-bottom: 1rem;
+    }
+    #qr-canvas {
+      background: #fff;
+      padding: 16px;
+      margin-bottom: 1rem;
+    }
+    .qr-info {
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.5;
+    }
+
+    /* ===== GAME SCREEN ===== */
+    #game-screen {
+      background: linear-gradient(180deg, #2d1b3d 0%, #1a1a2e 40%, #0d2137 100%);
+      cursor: crosshair;
+    }
+    .game-hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+    .hud-score {
+      font-size: 1.2rem;
+      color: #ffd700;
+    }
+    .hud-mob-name {
+      font-size: 1rem;
+      color: #e94560;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    /* Health bar */
+    .health-container {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    .hearts-row {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 300px;
+    }
+    .heart {
+      width: 20px; height: 20px;
+      position: relative;
+      transition: transform 0.15s;
+    }
+    .heart.damaged {
+      animation: heartPop 0.3s ease;
+    }
+    .heart svg { width: 100%; height: 100%; }
+    .heart-full { fill: #e94560; }
+    .heart-half { fill: #e94560; }
+    .heart-empty { fill: #333; }
+
+    @keyframes heartPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+
+    /* Mob display area */
+    .mob-area {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mob-sprite {
+      width: 128px;
+      height: 128px;
+      image-rendering: pixelated;
+      animation: mobIdle 0.8s ease-in-out infinite;
+      transition: filter 0.1s;
+    }
+    .mob-sprite.hit {
+      animation: mobHit 0.2s ease;
+      filter: brightness(3);
+    }
+    .mob-sprite.dying {
+      animation: mobDeath 0.8s ease forwards;
+    }
+
+    @keyframes mobIdle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes mobHit {
+      0% { transform: translateX(0) scale(1); }
+      25% { transform: translateX(-10px) scale(1.05); }
+      50% { transform: translateX(10px) scale(1.05); }
+      75% { transform: translateX(-5px) scale(1.02); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    @keyframes mobDeath {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+      30% { transform: scale(1.2) rotate(5deg); opacity: 1; filter: brightness(2); }
+      100% { transform: scale(0) rotate(180deg); opacity: 0; filter: brightness(5); }
+    }
+
+    /* Damage numbers */
+    .damage-number {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #ff4444;
+      pointer-events: none;
+      animation: damageFloat 0.8s ease-out forwards;
+      z-index: 20;
+      text-shadow: 0 0 4px #000, 2px 2px 0 #000;
+    }
+    @keyframes damageFloat {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-80px) scale(0.5); opacity: 0; }
+    }
+
+    /* Click particles */
+    .particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particleFly 0.5s ease-out forwards;
+      z-index: 20;
+    }
+    @keyframes particleFly {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+
+    /* ===== VICTORY SCREEN ===== */
+    #victory-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d3b1e 50%, #1a1a2e 100%);
+    }
+    #victory-screen h2 {
+      font-size: 2.2rem;
+      color: #4caf50;
+      text-shadow: 0 0 20px #4caf50;
+      margin-bottom: 1rem;
+      animation: victoryPulse 1s ease-in-out infinite;
+    }
+    @keyframes victoryPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .victory-points {
+      font-size: 3rem;
+      color: #ffd700;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .victory-label {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    .victory-mob {
+      width: 96px; height: 96px;
+      image-rendering: pixelated;
+      margin-bottom: 1.5rem;
+      opacity: 0.3;
+      filter: grayscale(1);
+    }
+
+    /* ===== LEADERBOARD ===== */
+    #leaderboard-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      padding: 1.5rem;
+      overflow-y: auto;
+      justify-content: flex-start;
+    }
+    #leaderboard-screen h2 {
+      font-size: 1.8rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+    .leaderboard-list {
+      width: 100%;
+      max-width: 400px;
+    }
+    .lb-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #333;
+    }
+    .lb-mob { color: #e94560; text-transform: uppercase; font-size: 0.9rem; }
+    .lb-kills { color: #888; font-size: 0.85rem; }
+    .lb-points { color: #ffd700; font-weight: bold; }
+    .lb-total {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px solid #e94560;
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2rem;
+    }
+    .lb-total .lb-mob { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HOME ===== -->
+  <div id="home-screen" class="screen active">
+    <h1>MOB HUNT</h1>
+    <p class="subtitle">Scan. Click. Slay.</p>
+    <div class="score-display">Total Score: <span id="total-score">0</span></div>
+    <button class="btn" onclick="showScreen('select-screen')">Hunt a Mob</button>
+    <button class="btn" onclick="showScreen('leaderboard-screen'); renderLeaderboard()">Leaderboard</button>
+    <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
+  </div>
+
+  <!-- ===== MOB SELECT ===== -->
+  <div id="select-screen" class="screen">
+    <h2>Choose Your Prey</h2>
+    <div class="mob-grid" id="mob-grid"></div>
+    <br>
+    <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+  </div>
+
+  <!-- ===== QR SCREEN ===== -->
+  <div id="qr-screen" class="screen">
+    <h2 id="qr-title">QR Code</h2>
+    <canvas id="qr-canvas" width="256" height="256"></canvas>
+    <p class="qr-info">Scan this QR code to start the hunt! Or tap the button below to fight now.</p>
+    <button class="btn" id="qr-fight-btn">Fight Now!</button>
+    <br>
+    <button class="btn btn-small" onclick="showScreen('select-screen')">Back</button>
+  </div>
+
+  <!-- ===== GAME ===== -->
+  <div id="game-screen" class="screen">
+    <div class="game-hud">
+      <div class="hud-score">Score: <span id="game-score">0</span></div>
+      <div class="hud-mob-name" id="game-mob-name"></div>
+    </div>
+    <div class="health-container">
+      <div class="hearts-row" id="hearts-row"></div>
+    </div>
+    <div class="mob-area" id="mob-area">
+      <canvas class="mob-sprite" id="mob-canvas" width="128" height="128"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== VICTORY ===== -->
+  <div id="victory-screen" class="screen">
+    <h2>MOB SLAIN!</h2>
+    <canvas class="victory-mob" id="victory-mob-canvas" width="96" height="96"></canvas>
+    <div class="victory-points" id="victory-points">+0</div>
+    <div class="victory-label">points earned</div>
+    <button class="btn" onclick="showScreen('select-screen')">Hunt Again</button>
+    <button class="btn" onclick="showScreen('home-screen')">Home</button>
+  </div>
+
+  <!-- ===== LEADERBOARD ===== -->
+  <div id="leaderboard-screen" class="screen">
+    <h2>Leaderboard</h2>
+    <div class="leaderboard-list" id="leaderboard-list"></div>
+    <br>
+    <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+  </div>
+
+<script>
+/* ================================================================
+   MOB DATA
+   ================================================================ */
+const MOBS = {
+  zombie: {
+    name: 'Zombie',
+    hearts: 10,
+    points: 10,
+    color: '#5b8731',
+    darkColor: '#3d5c1f',
+    eyeColor: '#000',
+    description: 'Slow but relentless',
+  },
+  skeleton: {
+    name: 'Skeleton',
+    hearts: 10,
+    points: 15,
+    color: '#c8c8c8',
+    darkColor: '#8a8a8a',
+    eyeColor: '#222',
+    description: 'Bony and brittle',
+  },
+  creeper: {
+    name: 'Creeper',
+    hearts: 10,
+    points: 20,
+    color: '#4caf50',
+    darkColor: '#2e7d32',
+    eyeColor: '#000',
+    description: 'Ssssssneaky',
+  },
+  spider: {
+    name: 'Spider',
+    hearts: 8,
+    points: 12,
+    color: '#4a3728',
+    darkColor: '#2c1f17',
+    eyeColor: '#e94560',
+    description: 'Eight-legged menace',
+  },
+  enderman: {
+    name: 'Enderman',
+    hearts: 20,
+    points: 30,
+    color: '#1a1a1a',
+    darkColor: '#000',
+    eyeColor: '#e040fb',
+    description: 'Tall, dark, dangerous',
+  },
+  witch: {
+    name: 'Witch',
+    hearts: 13,
+    points: 25,
+    color: '#7b5ea7',
+    darkColor: '#4a3668',
+    eyeColor: '#000',
+    description: 'Potion-brewing menace',
+  },
+};
+
+/* ================================================================
+   SOUND ENGINE (Web Audio API - Minecraft-style synthesis)
+   ================================================================ */
+let audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/* Eagerly unlock AudioContext on any user interaction */
+function unlockAudio() {
+  ensureAudio();
+  document.removeEventListener('click', unlockAudio);
+  document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
+
+/* --- Utility: noise buffer --- */
+function createNoiseBuffer(ctx, duration) {
+  const sampleRate = ctx.sampleRate;
+  const length = sampleRate * duration;
+  const buffer = ctx.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  return buffer;
+}
+
+/* --- PUNCH SOUND (plays on every hit) --- */
+/* Minecraft punch: short burst of low-mid noise with a sharp attack */
+function playPunch() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Noise burst for the "thwack" */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.1);
+
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 800;
+  noiseFilter.Q.value = 1.5;
+
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.35, t);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.1);
+
+  /* Low thud */
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.06);
+
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(0.4, t);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.1);
+}
+
+/* --- ZOMBIE HURT: low guttural groan --- */
+function playZombieHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Groan: low sawtooth with vibrato */
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  const baseFreq = 80 + Math.random() * 30;
+  osc.frequency.setValueAtTime(baseFreq, t);
+  osc.frequency.linearRampToValueAtTime(baseFreq * 0.7, t + 0.3);
+
+  /* Vibrato */
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = 6;
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.value = 10;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+  lfo.start(t);
+  lfo.stop(t + 0.35);
+
+  /* Formant filter for "voice" quality */
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(400, t);
+  filter.frequency.linearRampToValueAtTime(250, t + 0.3);
+  filter.Q.value = 3;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.setValueAtTime(0.3, t + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.4);
+}
+
+/* --- SKELETON HURT: bone rattle/clatter --- */
+function playSkeletonHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Multiple short clicks/pops for bone rattling */
+  for (let i = 0; i < 5; i++) {
+    const offset = i * 0.035 + Math.random() * 0.015;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = createNoiseBuffer(ctx, 0.03);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 2000 + Math.random() * 3000;
+    filter.Q.value = 8;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.25, t + offset);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.025);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(t + offset);
+    noise.stop(t + offset + 0.03);
+  }
+
+  /* A hollow "xylophone" tone */
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(800 + Math.random() * 400, t);
+  osc.frequency.exponentialRampToValueAtTime(300, t + 0.15);
+
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(0.15, t);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+/* --- CREEPER HURT: sizzling hiss --- */
+function playCreeperHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Filtered noise hiss that rises in pitch */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.4);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(3000, t);
+  filter.frequency.exponentialRampToValueAtTime(6000, t + 0.2);
+  filter.frequency.exponentialRampToValueAtTime(2000, t + 0.35);
+  filter.Q.value = 2;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.001, t);
+  gain.gain.linearRampToValueAtTime(0.3, t + 0.03);
+  gain.gain.setValueAtTime(0.3, t + 0.15);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.4);
+
+  /* A subtle low "fuse" tone underneath */
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(120, t);
+  osc.frequency.linearRampToValueAtTime(180, t + 0.2);
+
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(0.08, t);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.35);
+}
+
+/* --- SPIDER HURT: screechy hiss/squeal --- */
+function playSpiderHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* High-pitched squeal */
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  const baseFreq = 600 + Math.random() * 200;
+  osc.frequency.setValueAtTime(baseFreq, t);
+  osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, t + 0.05);
+  osc.frequency.linearRampToValueAtTime(baseFreq * 0.6, t + 0.2);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 400;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.3);
+
+  /* Hiss noise layer */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.2);
+
+  const nf = ctx.createBiquadFilter();
+  nf.type = 'highpass';
+  nf.frequency.value = 5000;
+
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.15, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.25);
+}
+
+/* --- ENDERMAN HURT: warped static/teleport glitch --- */
+function playEndermanHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Distorted warbling tone (like a broken radio) */
+  for (let i = 0; i < 3; i++) {
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    const freq = 200 + Math.random() * 600;
+    osc.frequency.setValueAtTime(freq, t + i * 0.06);
+    osc.frequency.setValueAtTime(freq * 0.5, t + i * 0.06 + 0.03);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.12, t + i * 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.06);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t + i * 0.06);
+    osc.stop(t + i * 0.06 + 0.07);
+  }
+
+  /* Static/digital noise burst */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.3);
+
+  const nf = ctx.createBiquadFilter();
+  nf.type = 'bandpass';
+  nf.frequency.setValueAtTime(1500, t);
+  nf.frequency.linearRampToValueAtTime(4000, t + 0.1);
+  nf.frequency.linearRampToValueAtTime(800, t + 0.25);
+  nf.Q.value = 5;
+
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.2, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.35);
+
+  /* Reverse-sounding pitch dive */
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(2000, t);
+  osc2.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+
+  const g2 = ctx.createGain();
+  g2.gain.setValueAtTime(0.1, t);
+  g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+  osc2.connect(g2);
+  g2.connect(ctx.destination);
+  osc2.start(t);
+  osc2.stop(t + 0.3);
+}
+
+/* --- WITCH HURT: nasally cackle/screech --- */
+function playWitchHurt() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Nasally "ehh" sound - multiple harmonics */
+  const freqs = [350, 700, 1050];
+  freqs.forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(f + Math.random() * 50, t);
+    osc.frequency.linearRampToValueAtTime(f * 1.3, t + 0.08);
+    osc.frequency.linearRampToValueAtTime(f * 0.8, t + 0.25);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = f;
+    filter.Q.value = 8;
+
+    const gain = ctx.createGain();
+    const vol = 0.12 / (i + 1);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.35);
+  });
+
+  /* Vibrato LFO on the base for wobble */
+  /* (applied via the frequency modulation above) */
+}
+
+/* --- MOB AMBIENT SOUNDS (looping background) --- */
+let ambientInterval = null;
+
+function startAmbientSound(mobKey) {
+  stopAmbientSound();
+  playAmbientOnce(mobKey);
+  const delay = mobKey === 'enderman' ? 2000 : 3000 + Math.random() * 2000;
+  ambientInterval = setInterval(() => playAmbientOnce(mobKey), delay);
+}
+
+function stopAmbientSound() {
+  if (ambientInterval) {
+    clearInterval(ambientInterval);
+    ambientInterval = null;
+  }
+}
+
+function playAmbientOnce(mobKey) {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  switch (mobKey) {
+    case 'zombie': {
+      /* Low distant groan */
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      const freq = 70 + Math.random() * 20;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.linearRampToValueAtTime(freq * 0.8, t + 0.8);
+
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 3 + Math.random() * 2;
+      const lfoG = ctx.createGain();
+      lfoG.gain.value = 5;
+      lfo.connect(lfoG);
+      lfoG.connect(osc.frequency);
+      lfo.start(t);
+      lfo.stop(t + 0.9);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 300;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.08, t + 0.2);
+      gain.gain.linearRampToValueAtTime(0.08, t + 0.5);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.9);
+      break;
+    }
+    case 'skeleton': {
+      /* Bone rattling clicks */
+      for (let i = 0; i < 3; i++) {
+        const off = i * 0.12 + Math.random() * 0.05;
+        const noise = ctx.createBufferSource();
+        noise.buffer = createNoiseBuffer(ctx, 0.02);
+
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'highpass';
+        filt.frequency.value = 3000 + Math.random() * 2000;
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.06, t + off);
+        g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.02);
+
+        noise.connect(filt);
+        filt.connect(g);
+        g.connect(ctx.destination);
+        noise.start(t + off);
+        noise.stop(t + off + 0.03);
+      }
+      break;
+    }
+    case 'creeper': {
+      /* Quiet sizzle/fuse hiss */
+      const noise = ctx.createBufferSource();
+      noise.buffer = createNoiseBuffer(ctx, 0.6);
+
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'highpass';
+      filt.frequency.value = 4000;
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.1);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+
+      noise.connect(filt);
+      filt.connect(g);
+      g.connect(ctx.destination);
+      noise.start(t);
+      noise.stop(t + 0.6);
+      break;
+    }
+    case 'spider': {
+      /* Chittering clicks */
+      for (let i = 0; i < 6; i++) {
+        const off = i * 0.05;
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = 1200 + Math.random() * 800;
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.04, t + off);
+        g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.02);
+
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(t + off);
+        osc.stop(t + off + 0.03);
+      }
+      break;
+    }
+    case 'enderman': {
+      /* Eerie static/warble */
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(200 + Math.random() * 200, t);
+      osc.frequency.setValueAtTime(400 + Math.random() * 300, t + 0.15);
+      osc.frequency.setValueAtTime(150 + Math.random() * 100, t + 0.3);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 600;
+      filter.Q.value = 3;
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.05);
+      g.gain.setValueAtTime(0.06, t + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.55);
+      break;
+    }
+    case 'witch': {
+      /* Bubbling potion / quiet cackle */
+      for (let i = 0; i < 4; i++) {
+        const off = i * 0.1 + Math.random() * 0.05;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        const freq = 600 + Math.random() * 400;
+        osc.frequency.setValueAtTime(freq, t + off);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.5, t + off + 0.08);
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.05, t + off);
+        g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.08);
+
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(t + off);
+        osc.stop(t + off + 0.1);
+      }
+      break;
+    }
+  }
+}
+
+/* --- DEATH SOUND: pop + XP orb chime --- */
+function playDeathSound() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+
+  /* Big "poof" pop */
+  const noise = ctx.createBufferSource();
+  noise.buffer = createNoiseBuffer(ctx, 0.2);
+
+  const nf = ctx.createBiquadFilter();
+  nf.type = 'lowpass';
+  nf.frequency.setValueAtTime(2000, t);
+  nf.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.4, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(ctx.destination);
+  noise.start(t);
+  noise.stop(t + 0.25);
+
+  /* XP orb pickup chime (delayed) */
+  const chimeDelay = 0.3;
+  const notes = [880, 1047, 1319]; /* A5, C6, E6 */
+  notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.2, t + chimeDelay + i * 0.08);
+    g.gain.exponentialRampToValueAtTime(0.001, t + chimeDelay + i * 0.08 + 0.2);
+
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t + chimeDelay + i * 0.08);
+    osc.stop(t + chimeDelay + i * 0.08 + 0.25);
+  });
+}
+
+/* --- Map mob keys to their hurt sound functions --- */
+const MOB_HURT_SOUNDS = {
+  zombie: playZombieHurt,
+  skeleton: playSkeletonHurt,
+  creeper: playCreeperHurt,
+  spider: playSpiderHurt,
+  enderman: playEndermanHurt,
+  witch: playWitchHurt,
+};
+
+/* ================================================================
+   COOKIE HELPERS
+   ================================================================ */
+function setCookie(name, value, days = 365) {
+  const d = new Date();
+  d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (match) {
+    try { return JSON.parse(decodeURIComponent(match[2])); }
+    catch { return null; }
+  }
+  return null;
+}
+
+function getPlayerData() {
+  return getCookie('mob_hunt_data') || { totalScore: 0, kills: {} };
+}
+
+function savePlayerData(data) {
+  setCookie('mob_hunt_data', data);
+}
+
+/* ================================================================
+   SCREEN MANAGEMENT
+   ================================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id !== 'game-screen') {
+    stopAmbientSound();
+  }
+  if (id === 'home-screen') {
+    const data = getPlayerData();
+    document.getElementById('total-score').textContent = data.totalScore;
+  }
+}
+
+/* ================================================================
+   PIXEL ART MOB RENDERER
+   ================================================================ */
+function drawMob(ctx, mobKey, size, frame) {
+  const mob = MOBS[mobKey];
+  const s = size / 16; /* pixel scale */
+  ctx.clearRect(0, 0, size, size);
+
+  /* slight bounce from frame */
+  const bounce = Math.sin(frame * 0.1) * s;
+  ctx.save();
+  ctx.translate(0, bounce);
+
+  switch (mobKey) {
+    case 'zombie':
+      drawZombie(ctx, s, mob, frame);
+      break;
+    case 'skeleton':
+      drawSkeleton(ctx, s, mob, frame);
+      break;
+    case 'creeper':
+      drawCreeper(ctx, s, mob, frame);
+      break;
+    case 'spider':
+      drawSpider(ctx, s, mob, frame);
+      break;
+    case 'enderman':
+      drawEnderman(ctx, s, mob, frame);
+      break;
+    case 'witch':
+      drawWitch(ctx, s, mob, frame);
+      break;
+  }
+
+  ctx.restore();
+}
+
+function drawZombie(ctx, s, mob, frame) {
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 8*s);
+  /* Hair */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 1*s, 8*s, 2*s);
+  /* Eyes */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 4*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 4*s, 2*s, 2*s);
+  /* Mouth */
+  ctx.fillRect(6*s, 7*s, 4*s, 1*s);
+  /* Body */
+  ctx.fillStyle = '#4a8';
+  ctx.fillRect(5*s, 9*s, 6*s, 4*s);
+  /* Arms - animated */
+  const armSwing = Math.sin(frame * 0.15) * 1.5 * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 9*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 9*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillStyle = '#336';
+  const legSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillRect(6*s, 13*s + legSwing, 2*s, 3*s);
+  ctx.fillRect(9*s, 13*s - legSwing, 2*s, 3*s);
+}
+
+function drawSkeleton(ctx, s, mob, frame) {
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 1*s, 8*s, 7*s);
+  /* Eyes - dark hollows */
+  ctx.fillStyle = '#222';
+  ctx.fillRect(5*s, 3*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 3*s, 2*s, 2*s);
+  /* Nose */
+  ctx.fillRect(7*s, 5*s, 2*s, 1*s);
+  /* Mouth */
+  ctx.fillStyle = '#555';
+  ctx.fillRect(5*s, 6*s, 6*s, 1*s);
+  /* Spine */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(7*s, 8*s, 2*s, 5*s);
+  /* Ribs */
+  ctx.fillRect(5*s, 9*s, 6*s, 1*s);
+  ctx.fillRect(5*s, 11*s, 6*s, 1*s);
+  /* Arms */
+  const armSwing = Math.sin(frame * 0.12) * s;
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 8*s + armSwing, 2*s, 4*s);
+  ctx.fillRect(11*s, 8*s - armSwing, 2*s, 4*s);
+  /* Legs */
+  ctx.fillRect(6*s, 13*s, 1*s, 3*s);
+  ctx.fillRect(9*s, 13*s, 1*s, 3*s);
+}
+
+function drawCreeper(ctx, s, mob, frame) {
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(3*s, 0*s, 10*s, 8*s);
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(3*s, 0*s, 10*s, 1*s);
+  /* Face - iconic creeper face */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 2*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 2*s, 2*s, 2*s);
+  ctx.fillRect(7*s, 4*s, 2*s, 1*s);
+  ctx.fillRect(6*s, 5*s, 4*s, 2*s);
+  ctx.fillRect(6*s, 7*s, 1*s, 1*s);
+  ctx.fillRect(9*s, 7*s, 1*s, 1*s);
+  /* Body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 8*s, 6*s, 4*s);
+  /* 4 Legs */
+  const sway = Math.sin(frame * 0.1) * 0.5 * s;
+  ctx.fillRect(5*s + sway, 12*s, 2*s, 4*s);
+  ctx.fillRect(9*s - sway, 12*s, 2*s, 4*s);
+}
+
+function drawSpider(ctx, s, mob, frame) {
+  /* Body */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(5*s, 5*s, 6*s, 4*s);
+  /* Head */
+  ctx.fillRect(3*s, 6*s, 3*s, 3*s);
+  /* Abdomen */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(10*s, 5*s, 4*s, 5*s);
+  /* Eyes - 8 red eyes! */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(3*s, 6*s, 1*s, 1*s);
+  ctx.fillRect(5*s, 6*s, 1*s, 1*s);
+  ctx.fillRect(3*s, 8*s, 1*s, 1*s);
+  ctx.fillRect(5*s, 8*s, 1*s, 1*s);
+  /* Legs - 4 on each side, animated */
+  ctx.fillStyle = mob.color;
+  for (let i = 0; i < 4; i++) {
+    const legOff = Math.sin(frame * 0.15 + i * 1.5) * 1.5 * s;
+    ctx.fillRect((5 + i * 1.5)*s, 3*s + legOff, 1*s, 2*s);
+    ctx.fillRect((5 + i * 1.5)*s, 9*s - legOff, 1*s, 3*s);
+  }
+}
+
+function drawEnderman(ctx, s, mob, frame) {
+  /* Tall body */
+  ctx.fillStyle = mob.color;
+  /* Head */
+  ctx.fillRect(4*s, 0, 8*s, 5*s);
+  /* Eyes - purple glow */
+  ctx.fillStyle = mob.eyeColor;
+  ctx.fillRect(5*s, 2*s, 2*s, 1*s);
+  ctx.fillRect(9*s, 2*s, 2*s, 1*s);
+  /* Body - thin */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(6*s, 5*s, 4*s, 5*s);
+  /* Long arms */
+  const armSwing = Math.sin(frame * 0.08) * 1.5 * s;
+  ctx.fillRect(4*s, 5*s + armSwing, 2*s, 6*s);
+  ctx.fillRect(10*s, 5*s - armSwing, 2*s, 6*s);
+  /* Long legs */
+  const legSwing = Math.sin(frame * 0.1) * s;
+  ctx.fillRect(6*s, 10*s + legSwing, 2*s, 6*s);
+  ctx.fillRect(9*s, 10*s - legSwing, 2*s, 6*s);
+  /* Particles */
+  ctx.fillStyle = mob.eyeColor;
+  const px = 2 + Math.sin(frame * 0.2) * 3;
+  const py = 2 + Math.cos(frame * 0.17) * 5;
+  ctx.globalAlpha = 0.4 + Math.sin(frame * 0.3) * 0.3;
+  ctx.fillRect(px*s, py*s, s, s);
+  ctx.fillRect((14-px)*s, (py+2)*s, s, s);
+  ctx.globalAlpha = 1;
+}
+
+function drawWitch(ctx, s, mob, frame) {
+  /* Hat */
+  ctx.fillStyle = '#2c1f17';
+  ctx.fillRect(7*s, 0, 2*s, 1*s);
+  ctx.fillRect(5*s, 1*s, 6*s, 2*s);
+  ctx.fillRect(3*s, 3*s, 10*s, 1*s);
+  /* Head */
+  ctx.fillStyle = mob.color;
+  ctx.fillRect(4*s, 4*s, 8*s, 6*s);
+  /* Eyes */
+  ctx.fillStyle = '#000';
+  ctx.fillRect(5*s, 5*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 5*s, 2*s, 2*s);
+  /* Nose - wart */
+  ctx.fillStyle = '#6d4c41';
+  ctx.fillRect(7*s, 7*s, 2*s, 2*s);
+  /* Body / robe */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(4*s, 10*s, 8*s, 4*s);
+  /* Potion - bobbing */
+  const potionBob = Math.sin(frame * 0.15) * s;
+  ctx.fillStyle = '#76ff03';
+  ctx.fillRect(2*s, 10*s + potionBob, 2*s, 2*s);
+  ctx.fillStyle = '#33691e';
+  ctx.fillRect(2*s, 9*s + potionBob, 2*s, 1*s);
+  /* Legs */
+  ctx.fillStyle = mob.darkColor;
+  ctx.fillRect(5*s, 14*s, 2*s, 2*s);
+  ctx.fillRect(9*s, 14*s, 2*s, 2*s);
+}
+
+/* ================================================================
+   MOB SELECT GRID
+   ================================================================ */
+function renderMobGrid() {
+  const grid = document.getElementById('mob-grid');
+  grid.innerHTML = '';
+  for (const [key, mob] of Object.entries(MOBS)) {
+    const card = document.createElement('div');
+    card.className = 'mob-card';
+    card.innerHTML = `
+      <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
+      <div class="mob-name">${mob.name}</div>
+      <div class="mob-info">${mob.hearts} HP / ${mob.points} pts</div>
+      <div class="mob-info">${mob.description}</div>
+    `;
+    card.addEventListener('click', () => selectMob(key));
+    grid.appendChild(card);
+    /* Draw preview */
+    const canvas = card.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    drawMob(ctx, key, 64, 0);
+  }
+}
+
+/* ================================================================
+   QR CODE GENERATOR (using qrcode-generator library)
+   ================================================================ */
+function generateQR(mobKey) {
+  const baseUrl = window.location.href.split('?')[0];
+  const url = `${baseUrl}?mob=${mobKey}`;
+
+  document.getElementById('qr-title').textContent = `${MOBS[mobKey].name} QR Code`;
+
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 256;
+  canvas.width = size;
+  canvas.height = size;
+
+  /* Use qrcode-generator library for a real scannable QR code */
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+
+  const moduleCount = qr.getModuleCount();
+  const cellSize = Math.floor(size / (moduleCount + 2));
+  const padding = Math.floor((size - cellSize * moduleCount) / 2);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.fillStyle = '#000';
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (qr.isDark(row, col)) {
+        ctx.fillRect(
+          padding + col * cellSize,
+          padding + row * cellSize,
+          cellSize, cellSize
+        );
+      }
+    }
+  }
+
+  /* Set up fight button */
+  document.getElementById('qr-fight-btn').onclick = () => startGame(mobKey);
+
+  /* Update the QR info */
+  document.querySelector('.qr-info').innerHTML =
+    `Scan this code or share this link:<br><strong style="color:#e94560;word-break:break-all;">${url}</strong>`;
+}
+
+function selectMob(mobKey) {
+  showScreen('qr-screen');
+  generateQR(mobKey);
+}
+
+/* ================================================================
+   GAME ENGINE
+   ================================================================ */
+let currentMob = null;
+let currentHealth = 0;
+let maxHealth = 0;
+let gameAnimFrame = 0;
+let animationId = null;
+let isGameActive = false;
+
+function startGame(mobKey) {
+  currentMob = mobKey;
+  const mob = MOBS[mobKey];
+  currentHealth = mob.hearts * 2; /* half-hearts */
+  maxHealth = mob.hearts * 2;
+  isGameActive = true;
+
+  document.getElementById('game-mob-name').textContent = mob.name;
+  document.getElementById('game-score').textContent = getPlayerData().totalScore;
+
+  renderHearts();
+  showScreen('game-screen');
+
+  /* Start ambient mob sounds */
+  startAmbientSound(mobKey);
+
+  /* Start animation loop */
+  gameAnimFrame = 0;
+  if (animationId) cancelAnimationFrame(animationId);
+  animateGame();
+}
+
+function animateGame() {
+  gameAnimFrame++;
+  const canvas = document.getElementById('mob-canvas');
+  const ctx = canvas.getContext('2d');
+  drawMob(ctx, currentMob, 128, gameAnimFrame);
+  animationId = requestAnimationFrame(animateGame);
+}
+
+function renderHearts() {
+  const row = document.getElementById('hearts-row');
+  row.innerHTML = '';
+  const totalHearts = maxHealth / 2;
+
+  for (let i = 0; i < totalHearts; i++) {
+    const heart = document.createElement('div');
+    heart.className = 'heart';
+    const halfHearts = currentHealth;
+    const heartValue = (i + 1) * 2;
+
+    if (halfHearts >= heartValue) {
+      heart.innerHTML = heartSVG('full');
+    } else if (halfHearts >= heartValue - 1) {
+      heart.innerHTML = heartSVG('half');
+    } else {
+      heart.innerHTML = heartSVG('empty');
+    }
+    row.appendChild(heart);
+  }
+}
+
+function heartSVG(type) {
+  const color = type === 'empty' ? '#333' : '#e94560';
+  const bg = type === 'empty' ? '#222' : '#a02040';
+
+  if (type === 'half') {
+    return `<svg viewBox="0 0 20 20">
+      <path d="M10 18 Q0 10 0 6 Q0 2 4 2 Q7 2 10 5 Q13 2 16 2 Q20 2 20 6 Q20 10 10 18Z" fill="#333"/>
+      <clipPath id="halfClip"><rect x="0" y="0" width="10" height="20"/></clipPath>
+      <path d="M10 18 Q0 10 0 6 Q0 2 4 2 Q7 2 10 5 Q13 2 16 2 Q20 2 20 6 Q20 10 10 18Z" fill="${color}" clip-path="url(#halfClip)"/>
+    </svg>`;
+  }
+
+  return `<svg viewBox="0 0 20 20">
+    <path d="M10 18 Q0 10 0 6 Q0 2 4 2 Q7 2 10 5 Q13 2 16 2 Q20 2 20 6 Q20 10 10 18Z" fill="${color}"/>
+  </svg>`;
+}
+
+/* ===== HIT HANDLING ===== */
+function hitMob(e) {
+  if (!isGameActive) return;
+
+  /* Calculate damage: 1-3 half-hearts per hit */
+  const damage = 1 + Math.floor(Math.random() * 3);
+  currentHealth = Math.max(0, currentHealth - damage);
+
+  /* Sound: punch + mob hurt */
+  playPunch();
+  if (MOB_HURT_SOUNDS[currentMob]) {
+    MOB_HURT_SOUNDS[currentMob]();
+  }
+
+  /* Visual feedback */
+  const canvas = document.getElementById('mob-canvas');
+  canvas.classList.remove('hit');
+  void canvas.offsetWidth; /* force reflow */
+  canvas.classList.add('hit');
+  setTimeout(() => canvas.classList.remove('hit'), 200);
+
+  /* Damage number */
+  spawnDamageNumber(e, damage);
+
+  /* Particles */
+  spawnParticles(e);
+
+  /* Shake the heart that just lost */
+  const hearts = document.querySelectorAll('.heart');
+  const heartIndex = Math.floor(currentHealth / 2);
+  if (hearts[heartIndex]) {
+    hearts[heartIndex].classList.add('damaged');
+    setTimeout(() => hearts[heartIndex].classList.remove('damaged'), 300);
+  }
+
+  renderHearts();
+
+  /* Check death */
+  if (currentHealth <= 0) {
+    mobDied();
+  }
+}
+
+function spawnDamageNumber(e, damage) {
+  const gameScreen = document.getElementById('game-screen');
+  const num = document.createElement('div');
+  num.className = 'damage-number';
+  const hearts = damage / 2;
+  num.textContent = `-${hearts}`;
+
+  const rect = gameScreen.getBoundingClientRect();
+  const x = (e.clientX || e.touches?.[0]?.clientX || rect.width/2) - rect.left;
+  const y = (e.clientY || e.touches?.[0]?.clientY || rect.height/2) - rect.top;
+
+  num.style.left = (x - 15) + 'px';
+  num.style.top = (y - 20) + 'px';
+  gameScreen.appendChild(num);
+  setTimeout(() => num.remove(), 800);
+}
+
+function spawnParticles(e) {
+  const gameScreen = document.getElementById('game-screen');
+  const rect = gameScreen.getBoundingClientRect();
+  const x = (e.clientX || e.touches?.[0]?.clientX || rect.width/2) - rect.left;
+  const y = (e.clientY || e.touches?.[0]?.clientY || rect.height/2) - rect.top;
+  const mob = MOBS[currentMob];
+
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.background = i % 2 === 0 ? mob.color : '#e94560';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 40;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    gameScreen.appendChild(p);
+    setTimeout(() => p.remove(), 500);
+  }
+}
+
+function mobDied() {
+  isGameActive = false;
+
+  /* Stop ambient sounds and play death sound */
+  stopAmbientSound();
+  playDeathSound();
+
+  const canvas = document.getElementById('mob-canvas');
+  canvas.classList.add('dying');
+
+  setTimeout(() => {
+    canvas.classList.remove('dying');
+    if (animationId) cancelAnimationFrame(animationId);
+
+    /* Award points */
+    const mob = MOBS[currentMob];
+    const data = getPlayerData();
+    data.totalScore += mob.points;
+    if (!data.kills[currentMob]) data.kills[currentMob] = 0;
+    data.kills[currentMob]++;
+    savePlayerData(data);
+
+    /* Show victory */
+    document.getElementById('victory-points').textContent = `+${mob.points}`;
+    const victoryCanvas = document.getElementById('victory-mob-canvas');
+    const ctx = victoryCanvas.getContext('2d');
+    drawMob(ctx, currentMob, 96, 0);
+    showScreen('victory-screen');
+  }, 900);
+}
+
+/* Attach click/tap handler to game screen */
+document.getElementById('mob-area').addEventListener('click', hitMob);
+document.getElementById('mob-area').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  hitMob(e);
+}, { passive: false });
+
+/* ================================================================
+   LEADERBOARD
+   ================================================================ */
+function renderLeaderboard() {
+  const data = getPlayerData();
+  const list = document.getElementById('leaderboard-list');
+  list.innerHTML = '';
+
+  let hasKills = false;
+  for (const [key, mob] of Object.entries(MOBS)) {
+    const kills = data.kills[key] || 0;
+    if (kills === 0) continue;
+    hasKills = true;
+    const entry = document.createElement('div');
+    entry.className = 'lb-entry';
+    entry.innerHTML = `
+      <span class="lb-mob">${mob.name}</span>
+      <span class="lb-kills">${kills} kill${kills > 1 ? 's' : ''}</span>
+      <span class="lb-points">${kills * mob.points} pts</span>
+    `;
+    list.appendChild(entry);
+  }
+
+  if (!hasKills) {
+    list.innerHTML = '<p style="color:#888;text-align:center;">No mobs slain yet. Get hunting!</p>';
+    return;
+  }
+
+  /* Total */
+  const total = document.createElement('div');
+  total.className = 'lb-entry lb-total';
+  total.innerHTML = `
+    <span class="lb-mob">Total</span>
+    <span class="lb-points">${data.totalScore} pts</span>
+  `;
+  list.appendChild(total);
+}
+
+/* ================================================================
+   RESET
+   ================================================================ */
+function resetData() {
+  if (confirm('Reset all progress? This cannot be undone!')) {
+    savePlayerData({ totalScore: 0, kills: {} });
+    document.getElementById('total-score').textContent = '0';
+  }
+}
+
+/* ================================================================
+   URL PARAM HANDLING (QR code entry point)
+   ================================================================ */
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const mobKey = params.get('mob');
+  if (mobKey && MOBS[mobKey]) {
+    startGame(mobKey);
+  }
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+function init() {
+  const data = getPlayerData();
+  document.getElementById('total-score').textContent = data.totalScore;
+  renderMobGrid();
+  checkUrlParams();
+}
+
+init();
+</script>
+</body>
+</html>
