@@ -1244,7 +1244,7 @@ const MOBS = {
    ================================================================ */
 let audioCtx = null;
 let masterGain = null;
-let soundEnabled = false;
+let soundEnabled = true;
 
 function ensureAudio() {
   if (!audioCtx) {
@@ -1253,7 +1253,7 @@ function ensureAudio() {
     masterGain.connect(audioCtx.destination);
     /* Apply saved preference */
     const saved = localStorage.getItem('mobhunt_sound');
-    soundEnabled = saved === 'on';
+    soundEnabled = saved !== 'off';
     masterGain.gain.value = soundEnabled ? 1 : 0;
     updateSoundToggleUI();
   }
