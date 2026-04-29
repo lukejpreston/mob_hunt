@@ -180,34 +180,50 @@
     #game-screen {
       background: linear-gradient(180deg, #2d1b3d 0%, #1a1a2e 40%, #0d2137 100%);
       cursor: crosshair;
+      justify-content: flex-start;
+      gap: 1rem;
+      padding: 1rem 1rem 1.5rem;
     }
     .game-hud {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      padding: 1rem;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
       z-index: 10;
     }
     .hud-score {
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       color: #ffd700;
     }
+    .hud-score span { font-weight: bold; }
     .hud-mob-name {
-      font-size: 1rem;
+      font-size: 1.8rem;
       color: #e94560;
       text-transform: uppercase;
       letter-spacing: 0.15em;
     }
 
+    /* Mob info & hit instruction on game screen */
+    .game-mob-info {
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+    }
+    .game-hit-instruction {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #e94560;
+      text-align: center;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(233, 69, 96, 0.4);
+    }
+
     /* Health bar */
     .health-container {
-      position: absolute;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
       z-index: 10;
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
     .hearts-row {
       display: flex;
@@ -240,6 +256,7 @@
       position: relative;
       width: 200px;
       height: 200px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -434,11 +451,18 @@
       color: inherit;
     }
     .event-notification .btn:hover, .event-notification .btn:active {
-      background: currentColor;
-      color: #fff;
+      filter: brightness(1.3);
     }
     .warden-event { color: #00838f; }
-    .wither-event { color: #555; }
+    .warden-event .btn {
+      background: #00838f;
+      color: #fff;
+    }
+    .wither-event { color: #888; }
+    .wither-event .btn {
+      background: #888;
+      color: #fff;
+    }
 
     /* ===== DRAGON UNLOCKED NOTIFICATION ===== */
     .dragon-notification {
@@ -469,11 +493,11 @@
     }
     .dragon-notification .btn {
       border-color: #e040fb;
-      color: #e040fb;
-    }
-    .dragon-notification .btn:hover, .dragon-notification .btn:active {
       background: #e040fb;
       color: #fff;
+    }
+    .dragon-notification .btn:hover, .dragon-notification .btn:active {
+      filter: brightness(1.3);
     }
     @keyframes dragonFadeIn {
       0% { opacity: 0; }
@@ -611,10 +635,7 @@
       transition: filter 0.2s;
     }
     #game-screen .btn-escape {
-      position: absolute;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
+      flex-shrink: 0;
     }
 
     /* ===== PRINT MEDIA ===== */
@@ -752,15 +773,14 @@
   <!-- ===== GAME ===== -->
   <div id="game-screen" class="screen">
     <div class="game-hud">
-      <div class="hud-score">Score: <span id="game-score">0</span></div>
+      <div class="hud-score">Score: <span id="game-score">0</span><span id="skull-display-game" class="skull-display" style="display:none;"><svg class="skull-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="8" fill="#333"/><rect x="5" y="10" width="6" height="3" fill="#222"/><rect x="5" y="4" width="2" height="2" fill="#555"/><rect x="9" y="4" width="2" height="2" fill="#555"/><rect x="6" y="8" width="1" height="2" fill="#555"/><rect x="9" y="8" width="1" height="2" fill="#555"/></svg> <span id="skull-count-game">0</span>/3</span></div>
       <div class="hud-mob-name" id="game-mob-name"></div>
-    </div>
-    <div class="health-container">
-      <div class="hearts-row" id="hearts-row"></div>
     </div>
     <div class="mob-area" id="mob-area">
       <canvas class="mob-sprite" id="mob-canvas" width="128" height="128"></canvas>
     </div>
+    <div class="game-mob-info" id="game-mob-info"></div>
+    <div class="game-hit-instruction" id="game-hit-instruction"></div>
     <button class="btn-escape" onclick="navigateTo('')">
       <svg class="boot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- Minecraft boot pixel art -->
@@ -779,6 +799,9 @@
       </svg>
       Escape
     </button>
+    <div class="health-container">
+      <div class="hearts-row" id="hearts-row"></div>
+    </div>
   </div>
 
   <!-- ===== VICTORY ===== -->
@@ -810,7 +833,7 @@
         <rect x="26" y="2" width="2" height="2" fill="#81D4FA"/>
         <rect x="28" y="4" width="2" height="2" fill="#81D4FA"/>
       </svg>
-      Hunt Again
+      Hunt
     </button>
     <button class="btn" onclick="navigateTo('')">Home</button>
   </div>
@@ -2212,7 +2235,18 @@ function checkWardenEvent() {
   return false;
 }
 
+function setPageButtonsDisabled(disabled) {
+  const activeScreen = document.querySelector('.screen.active');
+  if (!activeScreen) return;
+  activeScreen.querySelectorAll('button, .btn, .btn-hunt, .btn-escape').forEach(btn => {
+    btn.disabled = disabled;
+    btn.style.pointerEvents = disabled ? 'none' : '';
+    btn.style.opacity = disabled ? '0.3' : '';
+  });
+}
+
 function showWardenNotification() {
+  setPageButtonsDisabled(true);
   const overlay = document.createElement('div');
   overlay.className = 'event-notification warden-event';
 
@@ -2226,6 +2260,7 @@ function showWardenNotification() {
   btn.className = 'btn';
   btn.textContent = 'Face the Warden';
   btn.onclick = () => {
+    setPageButtonsDisabled(false);
     overlay.remove();
     unlockMob('warden');
     navigateTo('warden/hunt');
@@ -2236,7 +2271,7 @@ function showWardenNotification() {
   dismissBtn.className = 'btn btn-small';
   dismissBtn.textContent = 'Not Yet...';
   dismissBtn.style.marginTop = '0.5rem';
-  dismissBtn.onclick = () => overlay.remove();
+  dismissBtn.onclick = () => { setPageButtonsDisabled(false); overlay.remove(); };
   overlay.appendChild(dismissBtn);
 
   document.body.appendChild(overlay);
@@ -2284,6 +2319,7 @@ function updateSkullDisplay() {
     { display: document.getElementById('skull-display-home'), count: document.getElementById('skull-count-home') },
     { display: document.getElementById('skull-display-select'), count: document.getElementById('skull-count-select') },
     { display: document.getElementById('skull-display-scanner'), count: document.getElementById('skull-count-scanner') },
+    { display: document.getElementById('skull-display-game'), count: document.getElementById('skull-count-game') },
   ];
 
   displays.forEach(({ display, count }) => {
@@ -2298,6 +2334,7 @@ function updateSkullDisplay() {
 }
 
 function showWitherNotification() {
+  setPageButtonsDisabled(true);
   const overlay = document.createElement('div');
   overlay.className = 'event-notification wither-event';
 
@@ -2311,6 +2348,7 @@ function showWitherNotification() {
   btn.className = 'btn';
   btn.textContent = 'Fight the Wither';
   btn.onclick = () => {
+    setPageButtonsDisabled(false);
     overlay.remove();
     unlockMob('wither');
     navigateTo('wither/hunt');
@@ -2321,7 +2359,7 @@ function showWitherNotification() {
   dismissBtn.className = 'btn btn-small';
   dismissBtn.textContent = 'Not Yet...';
   dismissBtn.style.marginTop = '0.5rem';
-  dismissBtn.onclick = () => overlay.remove();
+  dismissBtn.onclick = () => { setPageButtonsDisabled(false); overlay.remove(); };
   overlay.appendChild(dismissBtn);
 
   document.body.appendChild(overlay);
@@ -2341,6 +2379,7 @@ function showDragonNotification() {
   if (window._dragonNotifShown) return;
   window._dragonNotifShown = true;
 
+  setPageButtonsDisabled(true);
   const overlay = document.createElement('div');
   overlay.className = 'dragon-notification';
 
@@ -2355,6 +2394,7 @@ function showDragonNotification() {
   btn.className = 'btn';
   btn.textContent = 'Accept the Challenge';
   btn.onclick = () => {
+    setPageButtonsDisabled(false);
     overlay.remove();
     navigateTo('enderdragon/hunt');
   };
@@ -2364,7 +2404,7 @@ function showDragonNotification() {
   dismissBtn.className = 'btn btn-small';
   dismissBtn.textContent = 'Not Right Now';
   dismissBtn.style.marginTop = '0.5rem';
-  dismissBtn.onclick = () => overlay.remove();
+  dismissBtn.onclick = () => { setPageButtonsDisabled(false); overlay.remove(); };
   overlay.appendChild(dismissBtn);
 
   document.body.appendChild(overlay);
@@ -3728,6 +3768,9 @@ function startGame(mobKey) {
 
   document.getElementById('game-mob-name').textContent = mob.name;
   document.getElementById('game-score').textContent = getPlayerData().totalScore;
+  document.getElementById('game-mob-info').textContent = mob.hearts + ' HP / ' + mob.points + ' pts \u2014 ' + mob.description;
+  document.getElementById('game-hit-instruction').textContent = 'Hit the ' + mob.name + ' to kill it!';
+  updateSkullDisplay();
 
   renderHearts();
   showScreen('game-screen');
@@ -3903,6 +3946,13 @@ function mobDied() {
       if (newSkulls >= 3 && hadWitherSkulls < 3) {
         witherJustUnlocked = true;
       }
+    }
+
+    /* Reset skulls after slaying the Wither */
+    if (currentMob === 'wither') {
+      const d = getPlayerData();
+      d.witherSkulls = 0;
+      savePlayerData(d);
     }
 
     /* Show victory */
