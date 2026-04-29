@@ -803,6 +803,40 @@
       color: #666;
       margin-top: 0.5rem;
     }
+    .intro-about-text {
+      font-size: 0.8rem;
+      color: #777;
+      max-width: 400px;
+      line-height: 1.6;
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    /* ===== ABOUT MODAL ===== */
+    .about-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    .about-overlay.active { display: flex; }
+    .about-modal {
+      background: #16213e;
+      border: 2px solid #e94560;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .about-modal p {
+      font-size: 0.9rem;
+      color: #bbb;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
 
     /* ===== STORAGE PREFERENCES MODAL ===== */
     .storage-prefs-overlay {
@@ -927,6 +961,12 @@
       </button>
 
     </div>
+    <p class="intro-about-text">
+      This little game was whipped up with the help of AI, and it's here for one purpose: letting you sprint around and bonk mobs for fun. It's totally free to play.<br><br>
+      No data is shared anywhere, nothing you do is sent off the website, and no images are processed using AI. Everything stays right here in your browser. If you ever want to wipe your progress, just clear your browser storage and poof &mdash; it's gone. Not even the mobs will know what hit them.<br><br>
+      If you're seeing this, the site either escaped into the wild before I could take it down&hellip; or I simply forgot. Both are equally possible.<br><br>
+      Either way, enjoy the chaos and have fun hunting!
+    </p>
   </div>
 
   <!-- ===== HOME ===== -->
@@ -967,6 +1007,20 @@
     <button class="btn btn-small" id="home-sound-toggle" onclick="toggleSound()">
       <span id="home-sound-label">Sound: off</span>
     </button>
+    <button class="btn btn-small" onclick="openAbout()">About</button>
+  </div>
+
+  <!-- ===== ABOUT MODAL ===== -->
+  <div class="about-overlay" id="about-overlay">
+    <div class="about-modal">
+      <p>
+        This little game was whipped up with the help of AI, and it's here for one purpose: letting you sprint around and bonk mobs for fun. It's totally free to play.<br><br>
+        No data is shared anywhere, nothing you do is sent off the website, and no images are processed using AI. Everything stays right here in your browser. If you ever want to wipe your progress, just clear your browser storage and poof &mdash; it's gone. Not even the mobs will know what hit them.<br><br>
+        If you're seeing this, the site either escaped into the wild before I could take it down&hellip; or I simply forgot. Both are equally possible.<br><br>
+        Either way, enjoy the chaos and have fun hunting!
+      </p>
+      <button class="btn" onclick="closeAbout()">CLOSE</button>
+    </div>
   </div>
 
   <!-- ===== STORAGE PREFERENCES MODAL ===== -->
@@ -1549,6 +1603,15 @@ function enterGame(withAudio) {
   if (isDragonUnlocked() && !data.kills['enderdragon']) {
     showDragonNotification();
   }
+}
+
+/* ===== ABOUT MODAL ===== */
+function openAbout() {
+  document.getElementById('about-overlay').classList.add('active');
+}
+
+function closeAbout() {
+  document.getElementById('about-overlay').classList.remove('active');
 }
 
 /* ===== STORAGE PREFERENCES MODAL ===== */
