@@ -308,41 +308,6 @@
       filter: grayscale(1);
     }
 
-    /* ===== LEADERBOARD ===== */
-    #leaderboard-screen {
-      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-      padding: 1.5rem;
-      overflow-y: auto;
-      justify-content: flex-start;
-    }
-    #leaderboard-screen h2 {
-      font-size: 1.8rem;
-      color: #ffd700;
-      margin-bottom: 1rem;
-    }
-    .leaderboard-list {
-      width: 100%;
-      max-width: 400px;
-    }
-    .lb-entry {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid #333;
-    }
-    .lb-mob { color: #e94560; text-transform: uppercase; font-size: 0.9rem; }
-    .lb-kills { color: #888; font-size: 0.85rem; }
-    .lb-points { color: #ffd700; font-weight: bold; }
-    .lb-total {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 2px solid #e94560;
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.2rem;
-    }
-    .lb-total .lb-mob { color: #fff; }
-
     /* ===== LOCKED MOB CARD ===== */
     .mob-card.locked {
       opacity: 0.6;
@@ -434,6 +399,104 @@
       0%, 100% { transform: scale(1); text-shadow: 0 0 30px #e040fb, 0 0 60px #7b1fa2; }
       50% { transform: scale(1.05); text-shadow: 0 0 50px #e040fb, 0 0 80px #7b1fa2; }
     }
+
+    /* ===== PRINT CARDS PAGE ===== */
+    #print-screen {
+      background: #fff;
+      justify-content: flex-start;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    #print-screen h2 {
+      font-size: 1.6rem;
+      color: #e94560;
+      margin-bottom: 1rem;
+    }
+    .print-actions {
+      margin-bottom: 1rem;
+    }
+    .print-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 900px;
+    }
+    .print-card {
+      border: 3px dashed #333;
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+      background: #fff;
+      color: #111;
+      font-family: 'Courier New', monospace;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .print-card canvas.print-mob-img {
+      width: 96px;
+      height: 96px;
+      image-rendering: pixelated;
+      display: block;
+      margin: 0 auto 0.6rem;
+    }
+    .print-card .print-mob-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #e94560;
+      margin-bottom: 0.3rem;
+    }
+    .print-card .print-mob-stats {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 0.2rem;
+    }
+    .print-card .print-mob-desc {
+      font-size: 0.8rem;
+      font-style: italic;
+      color: #777;
+      margin-bottom: 0.8rem;
+    }
+    .print-card canvas.print-qr {
+      width: 140px;
+      height: 140px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* ===== PRINT MEDIA ===== */
+    @media print {
+      html, body {
+        width: auto; height: auto;
+        overflow: visible;
+        background: #fff;
+        color: #000;
+      }
+      .screen { display: none !important; }
+      #print-screen {
+        display: block !important;
+        position: static;
+        width: 100%;
+        height: auto;
+        padding: 0;
+      }
+      #print-screen h2,
+      .print-actions,
+      .dragon-notification { display: none !important; }
+      .print-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        max-width: 100%;
+      }
+      .print-card {
+        border: 3px dashed #000;
+        padding: 1rem;
+      }
+      .print-card .print-mob-name { color: #000; }
+    }
   </style>
 </head>
 <body>
@@ -444,7 +507,6 @@
     <p class="subtitle">Scan. Click. Slay.</p>
     <div class="score-display">Total Score: <span id="total-score">0</span></div>
     <button class="btn" onclick="showScreen('select-screen')">Hunt a Mob</button>
-    <button class="btn" onclick="showScreen('leaderboard-screen'); renderLeaderboard()">Leaderboard</button>
     <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
   </div>
 
@@ -490,12 +552,14 @@
     <button class="btn" onclick="showScreen('home-screen')">Home</button>
   </div>
 
-  <!-- ===== LEADERBOARD ===== -->
-  <div id="leaderboard-screen" class="screen">
-    <h2>Leaderboard</h2>
-    <div class="leaderboard-list" id="leaderboard-list"></div>
-    <br>
-    <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+  <!-- ===== PRINT CARDS ===== -->
+  <div id="print-screen" class="screen">
+    <h2>Printable Mob Cards</h2>
+    <div class="print-actions">
+      <button class="btn" onclick="window.print()">Print Cards</button>
+      <button class="btn btn-small" onclick="showScreen('home-screen')">Back</button>
+    </div>
+    <div class="print-cards-grid" id="print-cards-grid"></div>
   </div>
 
 <script>
@@ -1286,12 +1350,13 @@ function savePlayerData(data) {
 
 /* ================================================================
    MOB UNLOCK TRACKING
-   Each mob is locked until its QR is scanned or the player clicks
-   "Fight Now!" on its card. Zombie is always unlocked by default.
-   Ender Dragon has its own separate points-threshold lock on top.
+   Every mob is locked until its QR is scanned. The ?admin URL flag
+   adds a "Fight Now!" override button. Ender Dragon also requires
+   a points-threshold on top of the QR unlock.
    ================================================================ */
+const IS_ADMIN = new URLSearchParams(window.location.search).has('admin');
+
 function isMobUnlocked(mobKey) {
-  if (mobKey === 'zombie') return true; /* starter mob */
   /* Dragon unlocks via points threshold, not QR */
   if (mobKey === 'enderdragon') return isDragonUnlocked();
   const data = getPlayerData();
@@ -1678,27 +1743,28 @@ function renderMobGrid() {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, 64, 64);
     } else if (isQrLocked) {
-      /* Locked until QR scanned or Fight Now clicked */
+      /* Locked until QR scanned; admin gets Fight Now override */
       card.className = 'mob-card locked';
       card.innerHTML = `
         <div class="lock-icon">&#128274;</div>
         <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
         <div class="mob-name">???</div>
         <div class="mob-info">Scan QR to unlock</div>
-        <button class="fight-now-btn">Fight Now!</button>
+        ${IS_ADMIN ? '<button class="fight-now-btn">Fight Now!</button>' : ''}
       `;
       const canvas = card.querySelector('canvas');
       const ctx = canvas.getContext('2d');
       drawMob(ctx, key, 64, 0);
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, 64, 64);
-      /* Fight Now button unlocks and goes to QR/fight screen */
-      const btn = card.querySelector('.fight-now-btn');
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        unlockMob(key);
-        selectMob(key);
-      });
+      if (IS_ADMIN) {
+        const btn = card.querySelector('.fight-now-btn');
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          unlockMob(key);
+          selectMob(key);
+        });
+      }
     } else {
       /* Fully unlocked */
       card.className = 'mob-card';
@@ -1979,41 +2045,83 @@ document.getElementById('mob-area').addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 /* ================================================================
-   LEADERBOARD
+   PRINTABLE CARDS
    ================================================================ */
-function renderLeaderboard() {
-  const data = getPlayerData();
-  const list = document.getElementById('leaderboard-list');
-  list.innerHTML = '';
+function generateQRCanvas(mobKey, size) {
+  const baseUrl = window.location.href.split('?')[0];
+  const url = `${baseUrl}?mob=${mobKey}`;
 
-  let hasKills = false;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+
+  const moduleCount = qr.getModuleCount();
+  const cellSize = Math.floor(size / (moduleCount + 2));
+  const padding = Math.floor((size - cellSize * moduleCount) / 2);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000';
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (qr.isDark(row, col)) {
+        ctx.fillRect(
+          padding + col * cellSize,
+          padding + row * cellSize,
+          cellSize, cellSize
+        );
+      }
+    }
+  }
+  return canvas;
+}
+
+function renderPrintCards() {
+  const grid = document.getElementById('print-cards-grid');
+  grid.innerHTML = '';
+
   for (const [key, mob] of Object.entries(MOBS)) {
-    const kills = data.kills[key] || 0;
-    if (kills === 0) continue;
-    hasKills = true;
-    const entry = document.createElement('div');
-    entry.className = 'lb-entry';
-    entry.innerHTML = `
-      <span class="lb-mob">${mob.name}</span>
-      <span class="lb-kills">${kills} kill${kills > 1 ? 's' : ''}</span>
-      <span class="lb-points">${kills * mob.points} pts</span>
-    `;
-    list.appendChild(entry);
-  }
+    const card = document.createElement('div');
+    card.className = 'print-card';
 
-  if (!hasKills) {
-    list.innerHTML = '<p style="color:#888;text-align:center;">No mobs slain yet. Get hunting!</p>';
-    return;
-  }
+    /* Mob image */
+    const mobCanvas = document.createElement('canvas');
+    mobCanvas.className = 'print-mob-img';
+    mobCanvas.width = 128;
+    mobCanvas.height = 128;
+    const mobCtx = mobCanvas.getContext('2d');
+    drawMob(mobCtx, key, 128, 0);
 
-  /* Total */
-  const total = document.createElement('div');
-  total.className = 'lb-entry lb-total';
-  total.innerHTML = `
-    <span class="lb-mob">Total</span>
-    <span class="lb-points">${data.totalScore} pts</span>
-  `;
-  list.appendChild(total);
+    /* QR code */
+    const qrCanvas = generateQRCanvas(key, 200);
+    qrCanvas.className = 'print-qr';
+
+    /* Text elements */
+    const nameEl = document.createElement('div');
+    nameEl.className = 'print-mob-name';
+    nameEl.textContent = mob.name;
+
+    const statsEl = document.createElement('div');
+    statsEl.className = 'print-mob-stats';
+    statsEl.textContent = `${mob.hearts} HP  /  ${mob.points} PTS`;
+
+    const descEl = document.createElement('div');
+    descEl.className = 'print-mob-desc';
+    descEl.textContent = mob.description;
+
+    card.appendChild(mobCanvas);
+    card.appendChild(nameEl);
+    card.appendChild(statsEl);
+    card.appendChild(descEl);
+    card.appendChild(qrCanvas);
+
+    grid.appendChild(card);
+  }
 }
 
 /* ================================================================
@@ -2031,6 +2139,14 @@ function resetData() {
    ================================================================ */
 function checkUrlParams() {
   const params = new URLSearchParams(window.location.search);
+
+  /* ?print — show the printable cards page */
+  if (params.has('print')) {
+    renderPrintCards();
+    showScreen('print-screen');
+    return;
+  }
+
   const mobKey = params.get('mob');
   if (mobKey && MOBS[mobKey]) {
     /* Block dragon if points threshold not met */
