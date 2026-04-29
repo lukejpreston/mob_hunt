@@ -3915,18 +3915,18 @@ function mobDied() {
 
     /* Check if dragon was just unlocked */
     if (!wasUnlocked && nowUnlocked && currentMob !== 'enderdragon') {
-      setTimeout(() => showDragonNotification(), 1500);
+      setTimeout(() => showDragonNotification(), 500);
     }
 
     /* Check if wither was just unlocked */
     if (witherJustUnlocked) {
-      setTimeout(() => showWitherNotification(), 1500);
+      setTimeout(() => showWitherNotification(), 500);
     }
 
     /* Check warden random event (not on special bosses) */
     if (!witherJustUnlocked && currentMob !== 'warden' && currentMob !== 'wither' && currentMob !== 'enderdragon') {
       if (checkWardenEvent()) {
-        setTimeout(() => showWardenNotification(), 1500);
+        setTimeout(() => showWardenNotification(), 500);
       }
     }
   }, 900);
