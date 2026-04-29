@@ -345,13 +345,13 @@
 
     /* ===== LOCKED MOB CARD ===== */
     .mob-card.locked {
-      opacity: 0.4;
-      cursor: not-allowed;
+      opacity: 0.6;
       border-color: #555;
       position: relative;
+      cursor: default;
     }
     .mob-card.locked:hover, .mob-card.locked:active {
-      border-color: #555;
+      border-color: #777;
       transform: none;
     }
     .mob-card .lock-icon {
@@ -363,6 +363,32 @@
       font-size: 0.7rem;
       color: #e94560;
       margin-top: 0.25rem;
+    }
+    .mob-card .fight-now-btn {
+      display: inline-block;
+      margin-top: 0.4rem;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-family: inherit;
+      border: 1px solid #e94560;
+      background: transparent;
+      color: #e94560;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    .mob-card .fight-now-btn:hover, .mob-card .fight-now-btn:active {
+      background: #e94560;
+      color: #fff;
+    }
+    /* Dragon-locked (points threshold) stays fully locked */
+    .mob-card.dragon-locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .mob-card.dragon-locked:hover, .mob-card.dragon-locked:active {
+      border-color: #555;
+      transform: none;
     }
 
     /* ===== DRAGON UNLOCKED NOTIFICATION ===== */
@@ -1259,6 +1285,27 @@ function savePlayerData(data) {
 }
 
 /* ================================================================
+   MOB UNLOCK TRACKING
+   Each mob is locked until its QR is scanned or the player clicks
+   "Fight Now!" on its card. Zombie is always unlocked by default.
+   Ender Dragon has its own separate points-threshold lock on top.
+   ================================================================ */
+function isMobUnlocked(mobKey) {
+  if (mobKey === 'zombie') return true; /* starter mob */
+  /* Dragon unlocks via points threshold, not QR */
+  if (mobKey === 'enderdragon') return isDragonUnlocked();
+  const data = getPlayerData();
+  return !!(data.unlockedMobs && data.unlockedMobs[mobKey]);
+}
+
+function unlockMob(mobKey) {
+  const data = getPlayerData();
+  if (!data.unlockedMobs) data.unlockedMobs = {};
+  data.unlockedMobs[mobKey] = true;
+  savePlayerData(data);
+}
+
+/* ================================================================
    ENDER DRAGON UNLOCK LOGIC
    ================================================================ */
 /* Threshold = sum of points from each non-dragon mob (one kill of each) */
@@ -1605,14 +1652,19 @@ function drawWitch(ctx, s, mob, frame) {
 function renderMobGrid() {
   const grid = document.getElementById('mob-grid');
   grid.innerHTML = '';
-  const unlocked = isDragonUnlocked();
+  const dragonPointsUnlocked = isDragonUnlocked();
 
   for (const [key, mob] of Object.entries(MOBS)) {
-    const isLocked = mob.locked && !unlocked;
-    const card = document.createElement('div');
-    card.className = 'mob-card' + (isLocked ? ' locked' : '');
+    /* Ender Dragon has a special points-threshold lock */
+    const isDragonLocked = mob.locked && !dragonPointsUnlocked;
+    /* All other mobs are locked until scanned or "Fight Now!" */
+    const isQrLocked = !isDragonLocked && !isMobUnlocked(key);
 
-    if (isLocked) {
+    const card = document.createElement('div');
+
+    if (isDragonLocked) {
+      /* Dragon locked behind points - fully locked, no Fight Now */
+      card.className = 'mob-card locked dragon-locked';
       card.innerHTML = `
         <div class="lock-icon">&#128274;</div>
         <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
@@ -1620,13 +1672,36 @@ function renderMobGrid() {
         <div class="mob-info">Locked</div>
         <div class="lock-info">Need ${DRAGON_UNLOCK_THRESHOLD} pts to unlock</div>
       `;
-      /* Draw a dark silhouette for locked preview */
       const canvas = card.querySelector('canvas');
       const ctx = canvas.getContext('2d');
       drawMob(ctx, key, 64, 0);
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, 64, 64);
+    } else if (isQrLocked) {
+      /* Locked until QR scanned or Fight Now clicked */
+      card.className = 'mob-card locked';
+      card.innerHTML = `
+        <div class="lock-icon">&#128274;</div>
+        <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
+        <div class="mob-name">???</div>
+        <div class="mob-info">Scan QR to unlock</div>
+        <button class="fight-now-btn">Fight Now!</button>
+      `;
+      const canvas = card.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      drawMob(ctx, key, 64, 0);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, 64, 64);
+      /* Fight Now button unlocks and goes to QR/fight screen */
+      const btn = card.querySelector('.fight-now-btn');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        unlockMob(key);
+        selectMob(key);
+      });
     } else {
+      /* Fully unlocked */
+      card.className = 'mob-card';
       card.innerHTML = `
         <canvas class="mob-preview" width="64" height="64" data-mob="${key}"></canvas>
         <div class="mob-name">${mob.name}</div>
@@ -1634,7 +1709,6 @@ function renderMobGrid() {
         <div class="mob-info">${mob.description}</div>
       `;
       card.addEventListener('click', () => selectMob(key));
-      /* Draw preview */
       const canvas = card.querySelector('canvas');
       const ctx = canvas.getContext('2d');
       drawMob(ctx, key, 64, 0);
@@ -1959,8 +2033,10 @@ function checkUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const mobKey = params.get('mob');
   if (mobKey && MOBS[mobKey]) {
-    /* Block locked mobs from URL access */
+    /* Block dragon if points threshold not met */
     if (MOBS[mobKey].locked && !isDragonUnlocked()) return;
+    /* Scanning a QR unlocks that mob permanently */
+    unlockMob(mobKey);
     startGame(mobKey);
   }
 }
