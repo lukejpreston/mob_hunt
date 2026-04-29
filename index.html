@@ -633,6 +633,7 @@
     </button>
     <button class="btn btn-small" onclick="navigateTo('list')">Mob List</button>
     <button class="btn btn-small" onclick="resetData()">Reset Progress</button>
+    <button class="btn btn-small" onclick="navigateTo('print')" id="home-print-btn" style="display:none;">Print</button>
   </div>
 
   <!-- ===== MOB SELECT ===== -->
@@ -1573,6 +1574,10 @@ function savePlayerData(data) {
    a points-threshold on top of the QR unlock.
    ================================================================ */
 const IS_ADMIN = new URLSearchParams(window.location.search).has('admin');
+
+if (IS_ADMIN) {
+  document.getElementById('home-print-btn').style.display = '';
+}
 
 function isMobUnlocked(mobKey) {
   /* Dragon unlocks via points threshold, not QR */
